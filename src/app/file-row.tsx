@@ -1,6 +1,5 @@
 import type { File, Folder } from "~/lib/mock-data";
 import { Folder as FolderIcon, FileIcon } from "lucide-react";
-import Link from "next/link";
 import type { folders, files } from "~/server/db/schema";
 
 export function FileRow(props: { file: typeof files.$inferSelect }) {
@@ -12,16 +11,22 @@ export function FileRow(props: { file: typeof files.$inferSelect }) {
     >
       <div className="grid grid-cols-12 items-center gap-4">
         <div className="col-span-6 flex items-center">
-          (
-          <a
-            href={file.url}
-            className="flex items-center text-gray-100 hover:text-blue-400"
-            target="_blank"
-          >
-            <FileIcon className="mr-3" size={20} />
-            {file.name}
-          </a>
-          )
+          {file.url ? (
+            <a
+              href={file.url}
+              className="flex items-center text-gray-100 hover:text-blue-400"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FileIcon className="mr-3" size={20} />
+              {file.name}
+            </a>
+          ) : (
+            <div className="flex items-center text-gray-100">
+              <FileIcon className="mr-3" size={20} />
+              {file.name}
+            </div>
+          )}
         </div>
         <div className="col-span-3 text-gray-400">{"file"}</div>
         <div className="col-span-3 text-gray-400">{file.size}</div>
@@ -50,12 +55,8 @@ export function FolderRow(props: {
             {folder.name}
           </button>
         </div>
-        <div className="col-span-3 text-gray-400">
-          {folder.type === "folder" ? "Folder" : ""}
-        </div>
-        <div className="col-span-3 text-gray-400">
-          {folder.type === "folder" ? "--" : "2 MB"}
-        </div>
+        <div className="col-span-3 text-gray-400"></div>
+        <div className="col-span-3 text-gray-400"></div>
       </div>
     </li>
   );
