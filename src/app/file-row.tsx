@@ -1,11 +1,11 @@
 import type { File, Folder } from "~/lib/mock-data";
 import { Folder as FolderIcon, FileIcon } from "lucide-react";
 import Link from "next/link";
+import type { folders, files } from "~/server/db/schema";
 
-export function FileRow(props: { file: File }) {
+export function FileRow(props: { file: typeof files.$inferSelect }) {
   const { file } = props;
   return (
-    // File Row
     <li
       key={file.id}
       className="hover:bg-gray-750 border-b border-gray-700 px-6 py-4"
@@ -31,12 +31,11 @@ export function FileRow(props: { file: File }) {
 }
 
 export function FolderRow(props: {
-  folder: Folder;
+  folder: typeof folders.$inferSelect;
   handleFolderClick: () => void;
 }) {
   const { folder, handleFolderClick } = props;
   return (
-    // Folder Row
     <li
       key={folder.id}
       className="hover:bg-gray-750 border-b border-gray-700 px-6 py-4"
@@ -52,7 +51,7 @@ export function FolderRow(props: {
           </button>
         </div>
         <div className="col-span-3 text-gray-400">
-          {folder.type === "folder" ? "Folder" : "File"}
+          {folder.type === "folder" ? "Folder" : ""}
         </div>
         <div className="col-span-3 text-gray-400">
           {folder.type === "folder" ? "--" : "2 MB"}
