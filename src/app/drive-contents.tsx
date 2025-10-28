@@ -12,6 +12,8 @@ export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
   folders: (typeof folders_table.$inferSelect)[];
   parents: (typeof folders_table.$inferSelect)[];
+
+  currentFolderId: number;
 }) {
   const navigate = useRouter();
 
@@ -85,6 +87,9 @@ export default function DriveContents(props: {
                 return "Getting ready...";
               },
               allowedContent: () => "",
+            }}
+            input={{
+              folderId: props.currentFolderId,
             }}
           />
           <p className="mt-2 text-sm text-gray-400">Max file size: 1GB</p>

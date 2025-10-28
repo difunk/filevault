@@ -10,6 +10,7 @@
 
 ## 28-10-2025
 
+- [x] Upload files to the correct folder
+- [x] Add "ownership" to files and folders
 - [ ] Add homepage
-- [ ] Upload files to the correct folder
 - [ ] Delete files button
