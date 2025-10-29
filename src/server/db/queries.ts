@@ -5,9 +5,7 @@ import { db } from "~/server/db";
 import {
   files_table as filesSchema,
   folders_table as foldersSchema,
-  type DB_FileType,
 } from "~/server/db/schema";
-import { uploadFile } from "uploadthing/client-future";
 
 export const QUERIES = {
   getAllParentsForFolder: async function (folderId: number) {
@@ -22,7 +20,6 @@ export const QUERIES = {
       throw new Error("Folder not found");
     }
 
-    // Füge den aktuellen Ordner hinzu
     parents.push(currentFolder[0]);
 
     let currentId: number | null = currentFolder[0].parent;

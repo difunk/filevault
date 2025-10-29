@@ -8,7 +8,6 @@ import { useUser } from "@clerk/nextjs";
 
 export default function PostHogPageView(): null {
   const posthog = usePostHog();
-  //https://youtu.be/c-hKSbzooAg?si=8QH3Hv2NZ5FcZxD0&t=10218
   const userInfo = useUser();
   useEffect(() => {
     if (userInfo.user?.id) {
