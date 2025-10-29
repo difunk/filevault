@@ -16,8 +16,8 @@ const SuspendedPostHogPageView = dynamicLoader(
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    const key = env.NEXT_PUBLIC_POSTHOG_KEY as string;
-    if (!key) return;
+    const key = env.NEXT_PUBLIC_POSTHOG_KEY;
+    if (!key || typeof key !== "string") return;
     posthog.init(key, {
       api_host: "/ingest",
       ui_host: "https://us.posthog.com",
