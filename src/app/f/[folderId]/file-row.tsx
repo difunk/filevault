@@ -1,4 +1,4 @@
-import type { File, Folder } from "~/lib/mock-data";
+
 import { Folder as FolderIcon, FileIcon, Trash2Icon } from "lucide-react";
 import type { folders_table, files_table } from "~/server/db/schema";
 import Link from "next/link";
@@ -10,34 +10,35 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
   return (
     <li
       key={file.id}
-      className="hover:bg-gray-750 border-b border-gray-700 px-6 py-4"
+      className="hover:bg-neutral-750 border-b border-neutral-700 px-6 py-4 transition-colors"
     >
       <div className="grid grid-cols-12 items-center gap-4">
         <div className="col-span-6 flex items-center">
           {file.url ? (
             <a
               href={file.url}
-              className="flex items-center text-gray-100 hover:text-blue-400"
+              className="flex items-center text-neutral-100 hover:text-neutral-300 transition-colors"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FileIcon className="mr-3" size={20} />
+              <FileIcon className="mr-3 text-neutral-400" size={20} />
               {file.name}
             </a>
           ) : (
-            <div className="flex items-center text-gray-100">
-              <FileIcon className="mr-3" size={20} />
+            <div className="flex items-center text-neutral-100">
+              <FileIcon className="mr-3 text-neutral-400" size={20} />
               {file.name}
             </div>
           )}
         </div>
-        <div className="col-span-2 text-gray-400">{"file"}</div>
-        <div className="col-span-3 text-gray-400">{file.size}</div>
-        <div className="col-span-1 text-gray-400">
+        <div className="col-span-2 text-neutral-400">{"file"}</div>
+        <div className="col-span-3 text-neutral-400">{file.size}</div>
+        <div className="col-span-1 text-neutral-400">
           <Button
             variant="ghost"
             onClick={() => deleteFile(file.id)}
             aria-label="Delete file"
+            className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700 transition-colors"
           >
             <Trash2Icon size={20} />
           </Button>
@@ -54,20 +55,20 @@ export function FolderRow(props: {
   return (
     <li
       key={folder.id}
-      className="hover:bg-gray-750 border-b border-gray-700 px-6 py-4"
+      className="hover:bg-neutral-750 border-b border-neutral-700 px-6 py-4 transition-colors"
     >
       <div className="grid grid-cols-12 items-center gap-4">
         <div className="col-span-6 flex items-center">
           <Link
             href={`/f/${folder.id}`}
-            className="flex items-center text-gray-100 hover:text-blue-400"
+            className="flex items-center text-neutral-100 hover:text-neutral-300 transition-colors"
           >
-            <FolderIcon size={20} />
+            <FolderIcon className="mr-3 text-neutral-400" size={20} />
             {folder.name}
           </Link>
         </div>
-        <div className="col-span-3 text-gray-400"></div>
-        <div className="col-span-3 text-gray-400"></div>
+        <div className="col-span-3 text-neutral-400"></div>
+        <div className="col-span-3 text-neutral-400"></div>
       </div>
     </li>
   );

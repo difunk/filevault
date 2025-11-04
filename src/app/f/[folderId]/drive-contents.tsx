@@ -7,9 +7,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { UploadButton } from "~/components/ui/uploadthing";
 import { useRouter } from "next/navigation";
-import { deleteFile } from "~/server/actions";
-import { QUERIES } from "~/server/db/queries";
-import { auth } from "@clerk/nextjs/server";
+
 
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
@@ -21,22 +19,22 @@ export default function DriveContents(props: {
 }) {
   const navigate = useRouter();
   return (
-    <div className="min-h-screen bg-gray-900 p-8 text-gray-100">
+    <div className="min-h-screen bg-neutral-900 p-8 text-neutral-100">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
             <Link
               href={`/f/${props.rootFolderId}`}
-              className="mr-2 text-gray-300 hover:text-white"
+              className="mr-2 text-neutral-300 hover:text-white transition-colors"
             >
               My Drive
             </Link>
-            {props.parents.map((folder, index) => (
+            {props.parents.map((folder) => (
               <div key={folder.id} className="flex items-center">
-                <ChevronRight className="mx-2 text-gray-500" size={16} />
+                <ChevronRight className="mx-2 text-neutral-500" size={16} />
                 <Link
                   href={`/f/${folder.id}`}
-                  className="text-gray-300 hover:text-white"
+                  className="text-neutral-300 hover:text-white transition-colors"
                 >
                   {folder.name}
                 </Link>
@@ -45,7 +43,7 @@ export default function DriveContents(props: {
           </div>
           <div>
             <SignedOut>
-              <button className="text-ceramic-white h-10 cursor-pointer rounded-full bg-[#6c47ff] px-4 text-sm font-medium sm:h-12 sm:px-5 sm:text-base">
+              <button className="border border-neutral-700 bg-neutral-800 text-white transition-colors hover:bg-neutral-700 h-10 cursor-pointer rounded-md px-4 text-sm font-medium sm:h-12 sm:px-5 sm:text-base">
                 <SignInButton />
               </button>
             </SignedOut>
@@ -54,9 +52,9 @@ export default function DriveContents(props: {
             </SignedIn>
           </div>
         </div>
-        <div className="rounded-lg bg-gray-800 shadow-xl">
-          <div className="border-b border-gray-700 px-6 py-4">
-            <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-400">
+        <div className="rounded-lg bg-neutral-800 border border-neutral-700 shadow-xl">
+          <div className="border-b border-neutral-700 px-6 py-4">
+            <div className="grid grid-cols-12 gap-4 text-sm font-medium text-neutral-400">
               <div className="col-span-6">Name</div>
               <div className="col-span-2">Type</div>
               <div className="col-span-3">Size</div>
@@ -83,7 +81,7 @@ export default function DriveContents(props: {
             }}
             appearance={{
               button:
-                "uploadBtn bg-[#6c47ff] hover:bg-[#5a3ad4] text-white px-6 py-3 rounded-md font-medium transition-colors cursor-pointer ut-ready:bg-[#6c47ff] ut-uploading:bg-[#5a3ad4]",
+                "uploadBtn border border-neutral-700 bg-neutral-800 text-white transition-colors hover:bg-neutral-700 px-6 py-3 rounded-md font-medium cursor-pointer ut-ready:bg-neutral-800 ut-uploading:bg-neutral-700",
               allowedContent: "hidden",
               container: "w-auto",
             }}
@@ -99,7 +97,7 @@ export default function DriveContents(props: {
               folderId: props.currentFolderId,
             }}
           />
-          <p className="mt-2 text-sm text-gray-400">Max file size: 1GB</p>
+          <p className="mt-2 text-sm text-neutral-400">Max file size: 1GB</p>
         </div>
       </div>
     </div>

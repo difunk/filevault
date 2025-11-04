@@ -15,7 +15,11 @@ export default async function GoogleDriveClone(props: {
 
   const parsedFolderId = parseInt(params.folderId);
   if (isNaN(parsedFolderId)) {
-    return <div>Invalid folder ID</div>;
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-900 px-4 text-center">
+        <div className="text-neutral-400">Invalid folder ID</div>
+      </div>
+    );
   }
 
   const [folders, files, parents, rootFolder] = await Promise.all([
