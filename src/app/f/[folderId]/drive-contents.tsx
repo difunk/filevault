@@ -8,7 +8,6 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { UploadButton } from "~/components/ui/uploadthing";
 import { useRouter } from "next/navigation";
 
-
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
   folders: (typeof folders_table.$inferSelect)[];
@@ -25,7 +24,7 @@ export default function DriveContents(props: {
           <div className="flex items-center">
             <Link
               href={`/f/${props.rootFolderId}`}
-              className="mr-2 text-neutral-300 hover:text-white transition-colors"
+              className="mr-2 text-neutral-300 transition-colors hover:text-white"
             >
               My Drive
             </Link>
@@ -34,7 +33,7 @@ export default function DriveContents(props: {
                 <ChevronRight className="mx-2 text-neutral-500" size={16} />
                 <Link
                   href={`/f/${folder.id}`}
-                  className="text-neutral-300 hover:text-white transition-colors"
+                  className="text-neutral-300 transition-colors hover:text-white"
                 >
                   {folder.name}
                 </Link>
@@ -43,7 +42,7 @@ export default function DriveContents(props: {
           </div>
           <div>
             <SignedOut>
-              <button className="border border-neutral-700 bg-neutral-800 text-white transition-colors hover:bg-neutral-700 h-10 cursor-pointer rounded-md px-4 text-sm font-medium sm:h-12 sm:px-5 sm:text-base">
+              <button className="h-10 cursor-pointer rounded-md border border-neutral-700 bg-neutral-800 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-700 sm:h-12 sm:px-5 sm:text-base">
                 <SignInButton />
               </button>
             </SignedOut>
@@ -52,7 +51,7 @@ export default function DriveContents(props: {
             </SignedIn>
           </div>
         </div>
-        <div className="rounded-lg bg-neutral-800 border border-neutral-700 shadow-xl">
+        <div className="rounded-lg border border-neutral-700 bg-neutral-800 shadow-xl">
           <div className="border-b border-neutral-700 px-6 py-4">
             <div className="grid grid-cols-12 gap-4 text-sm font-medium text-neutral-400">
               <div className="col-span-6">Name</div>

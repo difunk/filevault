@@ -27,9 +27,9 @@ export default async function DrivePage() {
             return redirect(`/f/${rootFolderId}`);
           }}
         >
-          <button 
+          <button
             type="submit"
-            className="border border-neutral-700 bg-neutral-800 px-6 py-3 rounded-md text-white transition-colors hover:bg-neutral-700 font-medium"
+            className="rounded-md border border-neutral-700 bg-neutral-800 px-6 py-3 font-medium text-white transition-colors hover:bg-neutral-700"
           >
             Create new drive
           </button>

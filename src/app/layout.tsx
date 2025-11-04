@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={`${geist.variable}`}>
-        <body className="bg-neutral-900 text-neutral-100 min-h-screen">
+        <body className="min-h-screen bg-neutral-900 text-neutral-100">
           <PostHogProvider>{children}</PostHogProvider>
         </body>
       </html>
