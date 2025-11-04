@@ -8,6 +8,8 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { UploadButton } from "~/components/ui/uploadthing";
 import { useRouter } from "next/navigation";
 import { deleteFile } from "~/server/actions";
+import { QUERIES } from "~/server/db/queries";
+import { auth } from "@clerk/nextjs/server";
 
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
@@ -15,15 +17,18 @@ export default function DriveContents(props: {
   parents: (typeof folders_table.$inferSelect)[];
 
   currentFolderId: number;
+  rootFolderId: number;
 }) {
   const navigate = useRouter();
-
   return (
     <div className="min-h-screen bg-gray-900 p-8 text-gray-100">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
-            <Link href="/f/1" className="mr-2 text-gray-300 hover:text-white">
+            <Link
+              href={`/f/${props.rootFolderId}`}
+              className="mr-2 text-gray-300 hover:text-white"
+            >
               My Drive
             </Link>
             {props.parents.map((folder, index) => (
