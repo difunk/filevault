@@ -34,7 +34,7 @@ export default function HomePage() {
             </svg>
           </div>
           <h1 className="mb-6 bg-gradient-to-r from-neutral-100 via-neutral-200 to-neutral-300 bg-clip-text text-5xl font-bold text-transparent md:text-6xl lg:text-7xl">
-            Goo Drive
+            filevault
           </h1>
         </div>
 
