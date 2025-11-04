@@ -26,13 +26,17 @@ export async function deleteFile(fileId: number) {
     return { error: "File not found" };
   }
 
-  const utapi = await utApi.deleteFiles([
+  const utapiResult = await utApi.deleteFiles([
     file.url.replace("https://utfs.io/f/", ""),
   ]);
+
+  console.log(utapiResult);
 
   const dbDeleteResult = await db
     .delete(files_table)
     .where(and(eq(files_table.id, fileId)));
+
+  console.log(dbDeleteResult);
 
   const c = await cookies();
   c.set("force-refresh", JSON.stringify(Math.random()));
