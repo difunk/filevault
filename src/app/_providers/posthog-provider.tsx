@@ -19,10 +19,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     const key = env.NEXT_PUBLIC_POSTHOG_KEY;
     if (!key || typeof key !== "string") return;
     posthog.init(key, {
-      api_host: "/ingest",
+      api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
       ui_host: "https://us.posthog.com",
-      person_profiles: "identified_only", // or 'always' to create profiles for anonymous users as well
-      defaults: "2025-05-24",
       capture_pageview: false,
     });
   }, []);

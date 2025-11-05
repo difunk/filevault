@@ -7,6 +7,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { UploadButton } from "~/components/ui/uploadthing";
 import { useRouter } from "next/navigation";
+import { createFolder } from "~/server/actions";
 
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
@@ -69,33 +70,47 @@ export default function DriveContents(props: {
             ))}
           </ul>
         </div>
-        <div className="mt-6 flex flex-col items-center justify-center">
-          <UploadButton
-            endpoint="driveUploader"
-            onClientUploadComplete={() => {
-              navigate.refresh();
-            }}
-            config={{
-              mode: "auto",
-            }}
-            appearance={{
-              button:
-                "uploadBtn border border-neutral-700 bg-neutral-800 text-white transition-colors hover:bg-neutral-700 px-6 py-3 rounded-md font-medium cursor-pointer ut-ready:bg-neutral-800 ut-uploading:bg-neutral-700",
-              allowedContent: "hidden",
-              container: "w-auto",
-            }}
-            content={{
-              button({ ready, isUploading }) {
-                if (isUploading) return "Uploading...";
-                if (ready) return "Upload Files";
-                return "Getting ready...";
-              },
-              allowedContent: () => "",
-            }}
-            input={{
-              folderId: props.currentFolderId,
-            }}
-          />
+        <div className="mt-6 flex flex-col items-center justify-center gap-4">
+          <div className="flex gap-4">
+            <button
+              onClick={async () => {
+                const folderName = window.prompt("Enter folder name:");
+                if (folderName && folderName.trim()) {
+                  await createFolder(folderName.trim(), props.currentFolderId);
+                  navigate.refresh();
+                }
+              }}
+              className="rounded-md border border-neutral-700 bg-neutral-800 px-6 py-3 font-medium text-white transition-colors hover:bg-neutral-700"
+            >
+              Create Folder
+            </button>
+            <UploadButton
+              endpoint="driveUploader"
+              onClientUploadComplete={() => {
+                navigate.refresh();
+              }}
+              config={{
+                mode: "auto",
+              }}
+              appearance={{
+                button:
+                  "uploadBtn border border-neutral-700 bg-neutral-800 text-white transition-colors hover:bg-neutral-700 px-6 py-3 rounded-md font-medium cursor-pointer ut-ready:bg-neutral-800 ut-uploading:bg-neutral-700",
+                allowedContent: "hidden",
+                container: "w-auto",
+              }}
+              content={{
+                button({ ready, isUploading }) {
+                  if (isUploading) return "Uploading...";
+                  if (ready) return "Upload Files";
+                  return "Getting ready...";
+                },
+                allowedContent: () => "",
+              }}
+              input={{
+                folderId: props.currentFolderId,
+              }}
+            />
+          </div>
           <p className="mt-2 text-sm text-neutral-400">Max file size: 1GB</p>
         </div>
       </div>

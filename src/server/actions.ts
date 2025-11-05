@@ -9,6 +9,12 @@ import { cookies } from "next/headers";
 
 const utApi = new UTApi();
 
+function extractFileKey(url: string): string {
+  const regex = /\/f\/(.+)$/;
+  const match = regex.exec(url);
+  return match?.[1] ?? url;
+}
+
 export async function deleteFile(fileId: number) {
   const session = await auth();
 
@@ -26,22 +32,68 @@ export async function deleteFile(fileId: number) {
     return { error: "File not found" };
   }
 
-  const utapiResult = await utApi.deleteFiles([
-    file.url.replace("https://utfs.io/f/", ""),
-  ]);
+  const utapiResult = await utApi.deleteFiles([extractFileKey(file.url)]);
 
+  console.log("utapi delete files:");
   console.log(utapiResult);
 
   const dbDeleteResult = await db
     .delete(files_table)
-    .where(and(eq(files_table.id, fileId)));
+    .where(eq(files_table.id, fileId));
 
+  console.log("utapi delete results:");
   console.log(dbDeleteResult);
 
   const c = await cookies();
   c.set("force-refresh", JSON.stringify(Math.random()));
 
   return { success: true };
+}
+
+async function deleteFolderContentsRecursively(
+  folderId: number,
+  userId: string,
+) {
+  // find all files inside the folder
+  const filesInFolder = await db
+    .select()
+    .from(files_table)
+    .where(
+      and(eq(files_table.parent, folderId), eq(files_table.ownerId, userId)),
+    );
+
+  // check if files were found
+  if (filesInFolder.length > 0) {
+    const files = filesInFolder.map((file) => extractFileKey(file.url));
+
+    // delete files from upload thingwas
+    await utApi.deleteFiles(files);
+
+    // delete files from db
+    await db
+      .delete(files_table)
+      .where(
+        and(eq(files_table.parent, folderId), eq(files_table.ownerId, userId)),
+      );
+  }
+
+  // find all sub folders inside the folder
+  const subFolders = await db
+    .select()
+    .from(folders_table)
+    .where(
+      and(
+        eq(folders_table.parent, folderId),
+        eq(folders_table.ownerId, userId),
+      ),
+    );
+
+  await Promise.all(
+    subFolders.map(async (subFolder) => {
+      await deleteFolderContentsRecursively(subFolder.id, userId);
+      await db.delete(folders_table).where(eq(folders_table.id, subFolder.id));
+    }),
+  );
 }
 
 export async function deleteFolder(folderId: number) {
@@ -65,6 +117,9 @@ export async function deleteFolder(folderId: number) {
     return { error: "Folder not found" };
   }
 
+  await deleteFolderContentsRecursively(folderId, session.userId);
+
+  // kill directory itself
   await db.delete(folders_table).where(and(eq(folders_table.id, folderId)));
 
   const c = await cookies();
