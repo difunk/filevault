@@ -1,9 +1,20 @@
-import { Folder as FolderIcon, FileIcon, Trash2Icon } from "lucide-react";
+import {
+  Folder as FolderIcon,
+  FileIcon,
+  Trash2Icon,
+  EllipsisVertical,
+} from "lucide-react";
 import type { folders_table, files_table } from "~/server/db/schema";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { deleteFile, deleteFolder } from "~/server/actions";
+import { deleteFile, deleteFolder, renameFile } from "~/server/actions";
 import { useRouter } from "next/navigation";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@radix-ui/react-context-menu";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -55,19 +66,43 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
             </div>
           </div>
 
-          {/* Rechte Seite: Delete Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={async () => {
-              await deleteFile(file.id);
-              navigate.refresh();
-            }}
-            aria-label="Delete file"
-            className="h-9 w-9 flex-shrink-0 text-neutral-400 hover:bg-neutral-700 hover:text-red-400"
-          >
-            <Trash2Icon size={16} />
-          </Button>
+          {/* Rechte Seite: 3-Punkte Menü */}
+          <ContextMenu>
+            <ContextMenuTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 flex-shrink-0 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-100"
+              >
+                <EllipsisVertical size={16} />
+              </Button>
+            </ContextMenuTrigger>
+            <ContextMenuContent className="rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
+              <ContextMenuItem
+                onClick={async () => {
+                  const fileName = window.prompt("Enter file name:", file.name);
+                  if (fileName?.trim()) {
+                    await renameFile(file.id, file.ownerId, fileName.trim());
+                    navigate.refresh();
+                  }
+                }}
+                className="hover:bg-neutral-700 hover:text-neutral-100"
+              >
+                Rename
+              </ContextMenuItem>
+              <ContextMenuItem
+                onClick={async () => {
+                  if (window.confirm(`Delete "${file.name}"?`)) {
+                    await deleteFile(file.id);
+                    navigate.refresh();
+                  }
+                }}
+                className="text-red-400 hover:bg-red-600/20 hover:text-red-300"
+              >
+                Delete
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         </div>
       </div>
 
@@ -95,7 +130,7 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
           <div className="col-span-2 text-neutral-400">
             <span>{getFileExtension(file.name)}</span>
           </div>
-          <div className="col-span-3 text-neutral-400">
+          <div className="col-span-2 text-neutral-400">
             <span>{formatFileSize(file.size)}</span>
           </div>
           <div className="col-span-1">
@@ -111,6 +146,25 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
               <Trash2Icon size={20} />
             </Button>
           </div>
+
+          <ContextMenu>
+            <ContextMenuTrigger>
+              <EllipsisVertical className="text-neutral-400" />
+            </ContextMenuTrigger>
+            <ContextMenuContent className="rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-4 shadow-xl hover:bg-neutral-700">
+              <ContextMenuItem
+                onClick={async () => {
+                  const fileName = window.prompt("Enter file name:");
+                  if (fileName?.trim()) {
+                    await renameFile(file.id, file.ownerId, fileName.trim());
+                  }
+                }}
+                className="hover:border-none hover:outline-0"
+              >
+                Rename
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         </div>
       </div>
     </li>

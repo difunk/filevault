@@ -80,11 +80,11 @@ export default function DriveContents(props: {
                   navigate.refresh();
                 }
               }}
-              className="ut-ready:bg-neutral-800 ut-uploading:bg-neutral-700 cursor-pointer rounded-md border border-neutral-700 bg-neutral-800 px-6 py-3 font-medium text-white transition-colors hover:bg-neutral-700"
+              className="ut-ready:bg-neutral-800 ut-uploading:bg-neutral-700 flex h-[50px] cursor-pointer items-center justify-center rounded-md border border-neutral-700 bg-neutral-800 px-6 py-3 font-medium text-white transition-colors hover:bg-neutral-700"
             >
               Create Folder
             </button>
-            <div className="flex h-[48px] items-center">
+            <div className="flex h-[50px] items-center">
               <UploadButton
                 endpoint="driveUploader"
                 onClientUploadComplete={() => {
@@ -95,7 +95,7 @@ export default function DriveContents(props: {
                 }}
                 appearance={{
                   button:
-                    "uploadBtn h-auto border border-neutral-700 bg-neutral-800 text-white transition-colors hover:bg-neutral-700 px-6 py-3 rounded-md font-medium cursor-pointer ut-ready:bg-neutral-800 ut-uploading:bg-neutral-700",
+                    "uploadBtn h-[50px] flex items-center justify-center border border-neutral-700 bg-neutral-800 text-white transition-colors hover:bg-neutral-700 px-6 py-3 rounded-md font-medium cursor-pointer ut-ready:bg-neutral-800 ut-uploading:bg-neutral-700",
                   allowedContent: "hidden",
                   container: "w-auto",
                 }}

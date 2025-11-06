@@ -50,6 +50,49 @@ export async function deleteFile(fileId: number) {
   return { success: true };
 }
 
+export async function renameFile(fileId: number, userId: string, name: string) {
+  const session = await auth();
+
+  if (!session.userId) {
+    return { error: "Unauthorized" };
+  }
+
+  const [selectedFile] = await db
+    .select()
+    .from(files_table)
+    .where(and(eq(files_table.id, fileId), eq(files_table.ownerId, userId)));
+
+  if (!selectedFile) {
+    return { error: "File not found" };
+  }
+
+  const originalName = selectedFile.name;
+  const originalExtension = originalName.includes(".")
+    ? "." + originalName.split(".").pop()
+    : "";
+  let newName = name.trim();
+  if (originalExtension && !newName.includes(".")) {
+    newName = newName + originalExtension;
+  }
+
+  const utapiResult = await utApi.renameFiles({
+    fileKey: extractFileKey(selectedFile.url),
+    newName: newName,
+  });
+
+  const updateResult = await db
+    .update(files_table)
+    .set({ name: newName })
+    .where(and(eq(files_table.id, fileId), eq(files_table.ownerId, userId)));
+
+  console.log(updateResult);
+
+  const c = await cookies();
+  c.set("force-refresh", JSON.stringify(Math.random()));
+
+  return { success: true };
+}
+
 async function deleteFolderContentsRecursively(
   folderId: number,
   userId: string,

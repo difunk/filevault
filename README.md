@@ -124,10 +124,12 @@ npm run db:studio
 - [x] Analytics Integration
 - [x] Konsistente Sortierung
 - [x] Homepage & Onboarding
+- [x] Dateien löschen
+- [x] Dateien umbenennen
+- [x] Ordner erstellen
 
 ### 🔄 In Entwicklung
 
-- [ ] Dateien löschen
-- [ ] Ordner erstellen/verwalten
+- [ ] Ordner verwalten
 - [ ] Datei-Sharing
 - [ ] Such-Funktionalität
