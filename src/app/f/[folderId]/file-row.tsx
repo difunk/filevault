@@ -10,11 +10,11 @@ import { Button } from "~/components/ui/button";
 import { deleteFile, deleteFolder, renameFile } from "~/server/actions";
 import { useRouter } from "next/navigation";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@radix-ui/react-context-menu";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -67,18 +67,12 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
           </div>
 
           {/* Rechte Seite: 3-Punkte Menü */}
-          <ContextMenu>
-            <ContextMenuTrigger>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 w-9 flex-shrink-0 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-100"
-              >
-                <EllipsisVertical size={16} />
-              </Button>
-            </ContextMenuTrigger>
-            <ContextMenuContent className="rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
-              <ContextMenuItem
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-100">
+              <EllipsisVertical size={16} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
+              <DropdownMenuItem
                 onClick={async () => {
                   const fileName = window.prompt("Enter file name:", file.name);
                   if (fileName?.trim()) {
@@ -89,8 +83,8 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
                 className="hover:bg-neutral-700 hover:text-neutral-100"
               >
                 Rename
-              </ContextMenuItem>
-              <ContextMenuItem
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={async () => {
                   if (window.confirm(`Delete "${file.name}"?`)) {
                     await deleteFile(file.id);
@@ -100,9 +94,9 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
                 className="text-red-400 hover:bg-red-600/20 hover:text-red-300"
               >
                 Delete
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -147,12 +141,12 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
             </Button>
           </div>
 
-          <ContextMenu>
-            <ContextMenuTrigger>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
               <EllipsisVertical className="text-neutral-400" />
-            </ContextMenuTrigger>
-            <ContextMenuContent className="rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-4 shadow-xl hover:bg-neutral-700">
-              <ContextMenuItem
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-4 shadow-xl hover:bg-neutral-700">
+              <DropdownMenuItem
                 onClick={async () => {
                   const fileName = window.prompt("Enter file name:");
                   if (fileName?.trim()) {
@@ -162,9 +156,9 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
                 className="hover:border-none hover:outline-0"
               >
                 Rename
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </li>
