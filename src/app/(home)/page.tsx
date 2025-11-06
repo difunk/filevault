@@ -1,6 +1,19 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { Button } from "~/components/ui/button";
+// import { Button } from "~/components/ui/button";
+import { GetStartedButton } from "~/components/ui/getstartedbutton";
+
+async function handleGetStarted() {
+  "use server";
+
+  const session = await auth();
+
+  if (!session.userId) {
+    return redirect("/sign-in");
+  }
+
+  return redirect("/drive");
+}
 
 export default function HomePage() {
   return (
@@ -50,28 +63,9 @@ export default function HomePage() {
         </div>
 
         {/* CTA Section */}
-        <form
-          action={async () => {
-            "use server";
-
-            const session = await auth();
-
-            if (!session.userId) {
-              return redirect("/sign-in");
-            }
-
-            return redirect("/drive");
-          }}
-        >
+        <form action={handleGetStarted}>
           <div className="flex flex-col items-center gap-4">
-            <Button
-              variant="primary"
-              size="lg"
-              type="submit"
-              className="text-base font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
-            >
-              Get Started
-            </Button>
+            <GetStartedButton />
             <p className="text-xs text-neutral-500">
               No credit card required • Start organizing your files today
             </p>

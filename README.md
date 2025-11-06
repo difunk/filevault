@@ -1,10 +1,10 @@
-# FileVault - Google Drive Clone
+# filevault - Google Drive Clone
 
 Ein moderner Cloud-Speicher-Service, der mit Next.js 15, TypeScript und modernen Web-Technologien entwickelt wurde.
 
 ## 🚀 Übersicht
 
-FileVault ist eine Google Drive Alternative mit folgenden Kernfunktionen:
+filevault ist eine Google Drive Alternative mit folgenden Kernfunktionen:
 
 - 📁 Dateien und Ordner verwalten
 - ☁️ Datei-Upload

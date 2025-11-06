@@ -6,7 +6,7 @@ export default function HomePage(props: { children: React.ReactNode }) {
       {/* Footer */}
       <footer className="mt-16 border-t border-neutral-800 pt-8 text-center">
         <p className="text-xs text-neutral-500">
-          © {new Date().getFullYear()} filefault. All rights reserved.
+          © {new Date().getFullYear()} filevault. All rights reserved.
         </p>
       </footer>
     </div>
