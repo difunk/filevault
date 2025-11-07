@@ -53,12 +53,21 @@ export default function DriveContents(props: {
           </div>
         </div>
         <div className="rounded-lg border border-neutral-700 bg-neutral-800 shadow-xl">
-          <div className="border-b border-neutral-700 px-6 py-4">
+          {/* Mobile Header */}
+          <div className="border-b border-neutral-700 px-4 py-4 sm:hidden">
+            <div className="flex justify-between text-sm font-medium text-neutral-400">
+              <div>Name</div>
+              <div>Actions</div>
+            </div>
+          </div>
+
+          {/* Desktop Header */}
+          <div className="hidden border-b border-neutral-700 px-6 py-4 sm:block">
             <div className="grid grid-cols-12 gap-4 text-sm font-medium text-neutral-400">
               <div className="col-span-6">Name</div>
               <div className="col-span-2">Type</div>
-              <div className="col-span-2 lg:col-span-3">Size</div>
-              <div className="col-span-2"></div>
+              <div className="col-span-2 lg:col-span-2">Size</div>
+              <div className="col-span-2">Actions</div>
             </div>
           </div>
           <ul>
