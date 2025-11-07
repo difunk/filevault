@@ -7,7 +7,12 @@ import {
 import type { folders_table, files_table } from "~/server/db/schema";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { deleteFile, deleteFolder, renameFile } from "~/server/actions";
+import {
+  deleteFile,
+  deleteFolder,
+  renameFile,
+  renameFolder,
+} from "~/server/actions";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -130,35 +135,38 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
           <div className="col-span-1">
             <Button
               variant="ghost"
+              size="sm"
               onClick={async () => {
                 await deleteFile(file.id);
                 navigate.refresh();
               }}
               aria-label="Delete file"
-              className="text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-red-400"
+              className="h-9 w-9 text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-red-400"
             >
-              <Trash2Icon size={20} />
+              <Trash2Icon size={16} />
             </Button>
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <EllipsisVertical className="text-neutral-400" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-4 shadow-xl hover:bg-neutral-700">
-              <DropdownMenuItem
-                onClick={async () => {
-                  const fileName = window.prompt("Enter file name:");
-                  if (fileName?.trim()) {
-                    await renameFile(file.id, file.ownerId, fileName.trim());
-                  }
-                }}
-                className="hover:border-none hover:outline-0"
-              >
-                Rename
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="col-span-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-100">
+                <EllipsisVertical size={16} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
+                <DropdownMenuItem
+                  onClick={async () => {
+                    const fileName = window.prompt("Enter file name:");
+                    if (fileName?.trim()) {
+                      await renameFile(file.id, file.ownerId, fileName.trim());
+                      navigate.refresh();
+                    }
+                  }}
+                  className="hover:bg-neutral-700 hover:text-neutral-100"
+                >
+                  Rename
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </li>
@@ -191,20 +199,43 @@ export function FolderRow(props: {
               </div>
             </div>
           </div>
-
-          {/* Rechte Seite: Delete Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={async () => {
-              await deleteFolder(folder.id);
-              navigate.refresh();
-            }}
-            aria-label="Delete folder"
-            className="h-9 w-9 flex-shrink-0 text-neutral-400 hover:bg-neutral-700 hover:text-red-400"
-          >
-            <Trash2Icon size={16} />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-100">
+              <EllipsisVertical size={16} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
+              <DropdownMenuItem
+                onClick={async () => {
+                  const folderName = window.prompt(
+                    "Enter folder name:",
+                    folder.name,
+                  );
+                  if (folderName?.trim()) {
+                    await renameFolder(
+                      folder.id,
+                      folder.ownerId,
+                      folderName.trim(),
+                    );
+                    navigate.refresh();
+                  }
+                }}
+                className="hover:bg-neutral-700 hover:text-neutral-100"
+              >
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (window.confirm(`Delete "${folder.name}"?`)) {
+                    await deleteFolder(folder.id);
+                    navigate.refresh();
+                  }
+                }}
+                className="text-red-400 hover:bg-red-600/20 hover:text-red-300"
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -221,19 +252,48 @@ export function FolderRow(props: {
             </Link>
           </div>
           <div className="col-span-2 text-neutral-400">Folder</div>
-          <div className="col-span-3 text-neutral-400">—</div>
+          <div className="col-span-2 text-neutral-400">—</div>
           <div className="col-span-1">
             <Button
               variant="ghost"
+              size="sm"
               onClick={async () => {
                 await deleteFolder(folder.id);
                 navigate.refresh();
               }}
               aria-label="Delete folder"
-              className="text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-red-400"
+              className="h-9 w-9 text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-red-400"
             >
-              <Trash2Icon size={20} />
+              <Trash2Icon size={16} />
             </Button>
+          </div>
+          <div className="col-span-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-100">
+                <EllipsisVertical size={16} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
+                <DropdownMenuItem
+                  onClick={async () => {
+                    const folderName = window.prompt(
+                      "Enter folder name:",
+                      folder.name,
+                    );
+                    if (folderName?.trim()) {
+                      await renameFolder(
+                        folder.id,
+                        folder.ownerId,
+                        folderName.trim(),
+                      );
+                      navigate.refresh();
+                    }
+                  }}
+                  className="hover:bg-neutral-700 hover:text-neutral-100"
+                >
+                  Rename
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

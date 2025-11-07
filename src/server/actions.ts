@@ -189,3 +189,45 @@ export async function createFolder(name: string, parentId: number) {
 
   return { success: true };
 }
+
+export async function renameFolder(
+  folderId: number,
+  userId: string,
+  name: string,
+) {
+  const session = await auth();
+
+  if (!session.userId) {
+    throw new Error("Unauthorized");
+  }
+
+  const [selectedFolder] = await db
+    .select()
+    .from(folders_table)
+    .where(
+      and(eq(folders_table.id, folderId), eq(folders_table.ownerId, userId)),
+    );
+
+  if (!selectedFolder) {
+    throw new Error("Folder not found");
+  }
+
+  const newName = name.trim();
+  if (!newName) {
+    throw new Error("Name cannot be empty");
+  }
+
+  const updateResult = await db
+    .update(folders_table)
+    .set({ name: newName })
+    .where(
+      and(eq(folders_table.id, folderId), eq(folders_table.ownerId, userId)),
+    );
+
+  console.log(updateResult);
+
+  const c = await cookies();
+  c.set("force-refresh", JSON.stringify(Math.random()));
+
+  return { success: true };
+}
