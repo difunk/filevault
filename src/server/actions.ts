@@ -139,6 +139,31 @@ async function deleteFolderContentsRecursively(
   );
 }
 
+export async function getFolderSizeRecursively(folderId: number) {
+  const filesInFolder = await db
+    .select({ size: files_table.size })
+    .from(files_table)
+    .where(eq(files_table.parent, folderId));
+
+  let totalSize = 0;
+
+  if (filesInFolder.length > 0) {
+    totalSize = filesInFolder.reduce((sum, file) => sum + file.size, 0);
+    console.log(totalSize);
+  }
+
+  const subFolders = await db
+    .select({ id: folders_table.id })
+    .from(folders_table)
+    .where(eq(folders_table.parent, folderId));
+
+  for (const subFolder of subFolders) {
+    totalSize += await getFolderSizeRecursively(subFolder.id);
+  }
+
+  return totalSize;
+}
+
 export async function deleteFolder(folderId: number) {
   const session = await auth();
 
