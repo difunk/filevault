@@ -11,7 +11,7 @@ import { createFolder } from "~/server/actions";
 
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
-  folders: (typeof folders_table.$inferSelect)[];
+  folders: (typeof folders_table.$inferSelect & { size: number })[];
   parents: (typeof folders_table.$inferSelect)[];
 
   currentFolderId: number;

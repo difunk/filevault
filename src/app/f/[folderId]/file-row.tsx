@@ -10,7 +10,6 @@ import { Button } from "~/components/ui/button";
 import {
   deleteFile,
   deleteFolder,
-  getFolderSizeRecursively,
   renameFile,
   renameFolder,
 } from "~/server/actions";
@@ -21,7 +20,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
-import { useEffect, useState } from "react";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -176,30 +174,10 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
 }
 
 export function FolderRow(props: {
-  folder: typeof folders_table.$inferSelect;
+  folder: typeof folders_table.$inferSelect & { size: number };
 }) {
   const { folder } = props;
   const navigate = useRouter();
-
-  const [folderSize, setFolderSize] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadFolderSize = async () => {
-      try {
-        setLoading(true);
-        const size = await getFolderSizeRecursively(folder.id);
-        setFolderSize(size);
-      } catch (error) {
-        console.error("Error loading folder size:", error);
-        setFolderSize(0); // Fallback
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadFolderSize();
-  }, [folder.id]);
 
   return (
     <li className="hover:bg-neutral-750 border-b border-neutral-700 transition-colors">
@@ -276,11 +254,7 @@ export function FolderRow(props: {
           <div className="col-span-2 text-neutral-400">Folder</div>
           <div className="col-span-2 text-neutral-400">
             <span>
-              {loading
-                ? "Loading..."
-                : folderSize !== null
-                  ? formatFileSize(folderSize)
-                  : "Error"}
+              {folder.size !== undefined ? formatFileSize(folder.size) : "—"}
             </span>
           </div>
           <div className="col-span-1">

@@ -8,6 +8,61 @@ import {
 } from "~/server/db/schema";
 
 export const QUERIES = {
+  getFolderSizeRecursively: async function (
+    folderId: number,
+    userId: string,
+  ): Promise<number> {
+    const filesInFolder = await db
+      .select({ size: filesSchema.size })
+      .from(filesSchema)
+      .where(
+        and(eq(filesSchema.parent, folderId), eq(filesSchema.ownerId, userId)),
+      );
+
+    let totalSize = 0;
+
+    if (filesInFolder.length > 0) {
+      totalSize = filesInFolder.reduce((sum, file) => sum + file.size, 0);
+    }
+
+    const subFolders = await db
+      .select({ id: foldersSchema.id })
+      .from(foldersSchema)
+      .where(
+        and(
+          eq(foldersSchema.parent, folderId),
+          eq(foldersSchema.ownerId, userId),
+        ),
+      );
+
+    for (const subFolder of subFolders) {
+      totalSize += await this.getFolderSizeRecursively(subFolder.id, userId);
+    }
+
+    return totalSize;
+  },
+
+  getFoldersWithSizes: async function (parentFolderId: number, userId: string) {
+    const folders = await db
+      .select()
+      .from(foldersSchema)
+      .where(
+        and(
+          eq(foldersSchema.parent, parentFolderId),
+          eq(foldersSchema.ownerId, userId),
+        ),
+      );
+
+    const foldersWithSizes = await Promise.all(
+      folders.map(async (folder) => ({
+        ...folder,
+        size: await this.getFolderSizeRecursively(folder.id, userId),
+      })),
+    );
+
+    return foldersWithSizes;
+  },
+
   getAllParentsForFolder: async function (folderId: number) {
     const parents = [];
 
