@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull, max } from "drizzle-orm";
 import { db } from "~/server/db";
 import {
   files_table as filesSchema,
@@ -117,7 +117,7 @@ export const QUERIES = {
       .select()
       .from(foldersSchema)
       .where(eq(foldersSchema.parent, folderId))
-      .orderBy(foldersSchema.id);
+      .orderBy(asc(foldersSchema.position), asc(foldersSchema.id));
   },
 
   getFiles: function (folderId: number) {
@@ -125,11 +125,55 @@ export const QUERIES = {
       .select()
       .from(filesSchema)
       .where(eq(filesSchema.parent, folderId))
-      .orderBy(filesSchema.id);
+      .orderBy(asc(filesSchema.position), asc(filesSchema.id));
+  },
+
+  getMaxPosition: async function (folderId: number, type: "file" | "folder") {
+    if (type === "file") {
+      const result = await db
+        .select({ maxPos: max(filesSchema.position) })
+        .from(filesSchema)
+        .where(eq(filesSchema.parent, folderId));
+
+      return result[0]?.maxPos ?? 0;
+    } else {
+      const result = await db
+        .select({ maxPos: max(foldersSchema.position) })
+        .from(foldersSchema)
+        .where(eq(foldersSchema.parent, folderId));
+
+      return result[0]?.maxPos ?? 0;
+    }
   },
 };
 
 export const MUTATIONS = {
+  reorderItems: async function (
+    items: Array<{ id: number; type: "file" | "folder"; newPosition: number }>,
+    userId: string,
+  ) {
+    for (const item of items) {
+      if (item.type === "file") {
+        await db
+          .update(filesSchema)
+          .set({ position: item.newPosition })
+          .where(
+            and(eq(filesSchema.id, item.id), eq(filesSchema.ownerId, userId)),
+          );
+      } else {
+        await db
+          .update(foldersSchema)
+          .set({ position: item.newPosition })
+          .where(
+            and(
+              eq(foldersSchema.id, item.id),
+              eq(foldersSchema.ownerId, userId),
+            ),
+          );
+      }
+    }
+  },
+
   createFile: async function (input: {
     file: {
       name: string;
@@ -139,9 +183,28 @@ export const MUTATIONS = {
     };
     userId: string;
   }) {
-    return await db
-      .insert(filesSchema)
-      .values({ ...input.file, ownerId: input.userId });
+    const maxPosition = await QUERIES.getMaxPosition(input.file.parent, "file");
+
+    return await db.insert(filesSchema).values({
+      ...input.file,
+      ownerId: input.userId,
+      position: maxPosition + 1,
+    });
+  },
+
+  createFolder: async function (input: {
+    name: string;
+    parent: number;
+    userId: string;
+  }) {
+    const maxPosition = await QUERIES.getMaxPosition(input.parent, "folder");
+
+    return await db.insert(foldersSchema).values({
+      name: input.name,
+      parent: input.parent,
+      ownerId: input.userId,
+      position: maxPosition + 1,
+    });
   },
 
   onboardUser: async function (userId: string) {
@@ -151,6 +214,7 @@ export const MUTATIONS = {
         name: "Root",
         parent: null,
         ownerId: userId,
+        position: 0,
       })
       .$returningId();
 
@@ -161,16 +225,19 @@ export const MUTATIONS = {
         name: "Trash",
         parent: rootFolderId,
         ownerId: userId,
+        position: 1,
       },
       {
         name: "Shared",
         parent: rootFolderId,
         ownerId: userId,
+        position: 2,
       },
       {
         name: "Documents",
         parent: rootFolderId,
         ownerId: userId,
+        position: 3,
       },
     ]);
 

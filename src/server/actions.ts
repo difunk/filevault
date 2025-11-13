@@ -6,6 +6,7 @@ import { db } from "./db";
 import { auth } from "@clerk/nextjs/server";
 import { UTApi } from "uploadthing/server";
 import { cookies } from "next/headers";
+import { MUTATIONS } from "./db/queries";
 
 const utApi = new UTApi();
 
@@ -178,11 +179,11 @@ export async function createFolder(name: string, parentId: number) {
     return { error: "Unauthorized" };
   }
 
-  const insertResult = await db
-    .insert(folders_table)
-    .values({ ownerId: session.userId, name: name, parent: parentId });
-
-  console.log(insertResult);
+  await MUTATIONS.createFolder({
+    name: name,
+    parent: parentId,
+    userId: session.userId,
+  });
 
   const c = await cookies();
   c.set("force-refresh", JSON.stringify(Math.random()));
@@ -230,4 +231,26 @@ export async function renameFolder(
   c.set("force-refresh", JSON.stringify(Math.random()));
 
   return { success: true };
+}
+
+export async function reorderItems(
+  items: Array<{ id: number; type: "file" | "folder"; newPosition: number }>,
+) {
+  const session = await auth();
+
+  if (!session.userId) {
+    return { error: "Unauthorized" };
+  }
+
+  try {
+    await MUTATIONS.reorderItems(items, session.userId);
+
+    const c = await cookies();
+    c.set("force-refresh", JSON.stringify(Math.random()));
+
+    return { success: true };
+  } catch (error) {
+    console.error("Reorder error:", error);
+    return { error: "Failed to reorder items" };
+  }
 }

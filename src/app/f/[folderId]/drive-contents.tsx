@@ -7,7 +7,9 @@ import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { UploadButton } from "~/components/ui/uploadthing";
 import { useRouter } from "next/navigation";
-import { createFolder } from "~/server/actions";
+import { createFolder, reorderItems } from "~/server/actions";
+import React, { useState } from "react";
+import { MUTATIONS } from "~/server/db/queries";
 
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
@@ -18,6 +20,72 @@ export default function DriveContents(props: {
   rootFolderId: number;
 }) {
   const navigate = useRouter();
+
+  type CombinedItem =
+    | (typeof files_table.$inferSelect & { type: "file" })
+    | (typeof folders_table.$inferSelect & { size: number; type: "folder" });
+
+  const [sortedItems, setSortedItems] = useState(() => {
+    const combined = [
+      ...props.folders.map((folder) => ({
+        ...folder,
+        type: "folder" as const,
+      })),
+      ...props.files.map((file) => ({ ...file, type: "file" as const })),
+    ];
+
+    return combined.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  });
+
+  const [draggedItem, setDraggedItem] = useState<CombinedItem | null>(null);
+
+  const handleDragStart = (item: CombinedItem) => {
+    setDraggedItem(item);
+    console.log(item);
+  };
+
+  const handleDragEnd = async (item: CombinedItem) => {
+    if (!draggedItem) return;
+
+    const reorderedItems = sortedItems.map((item, index) => ({
+      id: item.id,
+      type: item.type,
+      newPosition: index + 1,
+    }));
+
+    try {
+      await reorderItems(reorderedItems);
+    } catch (error) {
+      console.error(error);
+      navigate.refresh();
+    }
+
+    setDraggedItem(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetItem: CombinedItem) => {
+    e.preventDefault();
+
+    if (!draggedItem || draggedItem.id === targetItem.id) return;
+
+    const newItems = [...sortedItems];
+    const dragIndex = newItems.findIndex(
+      (item) => item.id === draggedItem.id && item.type === draggedItem.type,
+    );
+    const targetIndex = newItems.findIndex(
+      (item) => item.id === targetItem.id && item.type === targetItem.type,
+    );
+
+    if (dragIndex === -1 || targetIndex === -1) return;
+
+    const [draggedElement] = newItems.splice(dragIndex, 1);
+
+    if (!draggedElement) return;
+    newItems.splice(targetIndex, 0, draggedElement);
+
+    setSortedItems(newItems);
+  };
+
   return (
     <div className="min-h-screen bg-neutral-900 p-8 text-neutral-100">
       <div className="mx-auto max-w-6xl">
@@ -71,12 +139,29 @@ export default function DriveContents(props: {
             </div>
           </div>
           <ul>
-            {props.folders.map((folder) => (
-              <FolderRow key={folder.id} folder={folder} />
-            ))}
-            {props.files.map((file) => (
-              <FileRow key={file.id} file={file} />
-            ))}
+            {sortedItems.map((item) => {
+              if (item.type === "folder") {
+                return (
+                  <FolderRow
+                    key={`folder-${item.id}`}
+                    folder={item}
+                    onDragStart={() => handleDragStart(item)}
+                    onDragEnd={() => handleDragEnd(item)}
+                    onDragOver={(e) => handleDragOver(e, item)}
+                  />
+                );
+              } else {
+                return (
+                  <FileRow
+                    key={`file-${item.id}`}
+                    file={item}
+                    onDragStart={() => handleDragStart(item)}
+                    onDragEnd={() => handleDragEnd(item)}
+                    onDragOver={(e) => handleDragOver(e, item)}
+                  />
+                );
+              }
+            })}
           </ul>
         </div>
         <div className="mt-6 flex flex-col items-center justify-center gap-4">

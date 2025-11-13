@@ -4,7 +4,7 @@ import {
   Trash2Icon,
   EllipsisVertical,
 } from "lucide-react";
-import type { folders_table, files_table } from "~/server/db/schema";
+import { folders_table, type files_table } from "~/server/db/schema";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   deleteFolder,
   renameFile,
   renameFolder,
+  reorderItems,
 } from "~/server/actions";
 import { useRouter } from "next/navigation";
 import {
@@ -20,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
+import { useState } from "react";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -34,12 +36,30 @@ function getFileExtension(filename: string): string {
   return parts.length > 1 ? (parts.pop()?.toUpperCase() ?? "FILE") : "FILE";
 }
 
-export function FileRow(props: { file: typeof files_table.$inferSelect }) {
+export function FileRow(props: {
+  file: typeof files_table.$inferSelect;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+}) {
   const { file } = props;
   const navigate = useRouter();
 
   return (
-    <li className="hover:bg-neutral-750 border-b border-neutral-700 transition-colors">
+    <li
+      className="hover:bg-neutral-750 border-b border-neutral-700 transition-colors"
+      draggable="true"
+      onDragStart={(e) => {
+        props.onDragStart?.();
+      }}
+      onDragEnd={(e) => {
+        props.onDragEnd?.();
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        props.onDragOver?.(e);
+      }}
+    >
       {/* Mobile Layout (< 640px) */}
       <div className="block px-4 py-4 sm:hidden">
         <div className="flex items-start justify-between gap-3">
@@ -54,6 +74,7 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
                     className="block truncate font-medium text-neutral-100 hover:text-blue-400"
                     target="_blank"
                     rel="noopener noreferrer"
+                    draggable="false"
                   >
                     {file.name}
                   </a>
@@ -111,6 +132,7 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
           <div className="col-span-6 flex items-center">
             {file.url ? (
               <a
+                draggable="false"
                 href={file.url}
                 className="flex items-center text-neutral-100 transition-colors hover:text-neutral-300"
                 target="_blank"
@@ -175,12 +197,32 @@ export function FileRow(props: { file: typeof files_table.$inferSelect }) {
 
 export function FolderRow(props: {
   folder: typeof folders_table.$inferSelect & { size: number };
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: (e: React.DragEvent) => void;
 }) {
   const { folder } = props;
   const navigate = useRouter();
 
+  const [isDragging, setIsDragging] = useState(false);
+
   return (
-    <li className="hover:bg-neutral-750 border-b border-neutral-700 transition-colors">
+    <li
+      className="hover:bg-neutral-750 border-b border-neutral-700 transition-colors"
+      draggable="true"
+      onDragStart={(e) => {
+        setIsDragging(true);
+        props.onDragStart?.();
+      }}
+      onDragEnd={(e) => {
+        setIsDragging(false);
+        props.onDragEnd?.();
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        props.onDragOver?.(e);
+      }}
+    >
       {/* Mobile Layout (< 640px) */}
       <div className="block px-4 py-4 sm:hidden">
         <div className="flex items-center justify-between gap-3">
@@ -192,6 +234,7 @@ export function FolderRow(props: {
                 <Link
                   href={`/f/${folder.id}`}
                   className="block truncate font-medium text-neutral-100 hover:text-blue-400"
+                  draggable="false"
                 >
                   {folder.name}
                 </Link>
@@ -244,8 +287,14 @@ export function FolderRow(props: {
         <div className="grid grid-cols-12 items-center gap-4">
           <div className="col-span-6 flex items-center">
             <Link
+              draggable="false"
               href={`/f/${folder.id}`}
               className="flex items-center text-neutral-100 transition-colors hover:text-neutral-300"
+              onClick={(e) => {
+                if (isDragging) {
+                  e.preventDefault(); // Navigation beim Drag verhindern
+                }
+              }}
             >
               <FolderIcon className="mr-3 text-blue-400" size={20} />
               {folder.name}

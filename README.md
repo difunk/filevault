@@ -130,6 +130,7 @@ npm run db:studio
 
 ### 🔄 In Entwicklung
 
+- [ ] Dateien und Ordner per Drag-and-Drop verschieben
 - [ ] Ordner verwalten
 - [ ] Datei-Sharing
 - [ ] Such-Funktionalität
