@@ -41,24 +41,39 @@ export function FileRow(props: {
   onDragStart: () => void;
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent) => void;
+  onTouchStart?: (e: React.TouchEvent) => void;
+  onTouchMove?: (e: React.TouchEvent) => void;
+  onTouchEnd?: () => void;
+  "data-item-id"?: number;
+  "data-item-type"?: string;
+  isDragging?: boolean;
 }) {
   const { file } = props;
   const navigate = useRouter();
 
   return (
     <li
-      className="hover:bg-neutral-750 border-b border-neutral-700 transition-colors"
+      className={`border-b border-neutral-700 transition-all duration-200 ${
+        props.isDragging
+          ? "z-10 scale-105 transform bg-blue-500/20 opacity-60 shadow-lg"
+          : "hover:bg-neutral-750 cursor-move"
+      }`}
       draggable="true"
-      onDragStart={(e) => {
+      onDragStart={(_e) => {
         props.onDragStart?.();
       }}
-      onDragEnd={(e) => {
+      onDragEnd={(_e) => {
         props.onDragEnd?.();
       }}
       onDragOver={(e) => {
         e.preventDefault();
         props.onDragOver?.(e);
       }}
+      onTouchStart={props.onTouchStart}
+      onTouchMove={props.onTouchMove}
+      onTouchEnd={props.onTouchEnd}
+      data-item-id={props["data-item-id"]}
+      data-item-type={props["data-item-type"]}
     >
       {/* Mobile Layout (< 640px) */}
       <div className="block px-4 py-4 sm:hidden">
@@ -200,6 +215,12 @@ export function FolderRow(props: {
   onDragStart: () => void;
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent) => void;
+  onTouchStart?: (e: React.TouchEvent) => void;
+  onTouchMove?: (e: React.TouchEvent) => void;
+  onTouchEnd?: () => void;
+  "data-item-id"?: number;
+  "data-item-type"?: string;
+  isDragging?: boolean;
 }) {
   const { folder } = props;
   const navigate = useRouter();
@@ -208,13 +229,17 @@ export function FolderRow(props: {
 
   return (
     <li
-      className="hover:bg-neutral-750 border-b border-neutral-700 transition-colors"
+      className={`border-b border-neutral-700 transition-all duration-200 ${
+        props.isDragging
+          ? "z-10 scale-105 transform bg-blue-500/20 opacity-60 shadow-lg"
+          : "hover:bg-neutral-750 cursor-move"
+      }`}
       draggable="true"
-      onDragStart={(e) => {
+      onDragStart={(_e) => {
         setIsDragging(true);
         props.onDragStart?.();
       }}
-      onDragEnd={(e) => {
+      onDragEnd={(_e) => {
         setIsDragging(false);
         props.onDragEnd?.();
       }}
@@ -222,6 +247,11 @@ export function FolderRow(props: {
         e.preventDefault();
         props.onDragOver?.(e);
       }}
+      onTouchStart={props.onTouchStart}
+      onTouchMove={props.onTouchMove}
+      onTouchEnd={props.onTouchEnd}
+      data-item-id={props["data-item-id"]}
+      data-item-type={props["data-item-type"]}
     >
       {/* Mobile Layout (< 640px) */}
       <div className="block px-4 py-4 sm:hidden">

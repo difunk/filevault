@@ -8,8 +8,13 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { UploadButton } from "~/components/ui/uploadthing";
 import { useRouter } from "next/navigation";
 import { createFolder, reorderItems } from "~/server/actions";
-import React, { useState } from "react";
-import { MUTATIONS } from "~/server/db/queries";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
@@ -25,7 +30,7 @@ export default function DriveContents(props: {
     | (typeof files_table.$inferSelect & { type: "file" })
     | (typeof folders_table.$inferSelect & { size: number; type: "folder" });
 
-  const [sortedItems, setSortedItems] = useState(() => {
+  const combinedItems = useMemo((): CombinedItem[] => {
     const combined = [
       ...props.folders.map((folder) => ({
         ...folder,
@@ -35,16 +40,27 @@ export default function DriveContents(props: {
     ];
 
     return combined.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  });
+  }, [props.files, props.folders]);
+
+  const [sortedItems, setSortedItems] = useState(combinedItems);
+
+  useEffect(() => {
+    setSortedItems(combinedItems);
+  }, [combinedItems]);
 
   const [draggedItem, setDraggedItem] = useState<CombinedItem | null>(null);
+
+  // Touch State for mobile
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
+  const [isTouching, setIsTouching] = useState(false);
 
   const handleDragStart = (item: CombinedItem) => {
     setDraggedItem(item);
     console.log(item);
   };
 
-  const handleDragEnd = async (item: CombinedItem) => {
+  const handleDragEnd = async () => {
     if (!draggedItem) return;
 
     const reorderedItems = sortedItems.map((item, index) => ({
@@ -53,14 +69,18 @@ export default function DriveContents(props: {
       newPosition: index + 1,
     }));
 
+    setDraggedItem(null);
+
     try {
       await reorderItems(reorderedItems);
+
+      setTimeout(() => {
+        navigate.refresh();
+      }, 100);
     } catch (error) {
       console.error(error);
       navigate.refresh();
     }
-
-    setDraggedItem(null);
   };
 
   const handleDragOver = (e: React.DragEvent, targetItem: CombinedItem) => {
@@ -78,12 +98,84 @@ export default function DriveContents(props: {
 
     if (dragIndex === -1 || targetIndex === -1) return;
 
+
+
     const [draggedElement] = newItems.splice(dragIndex, 1);
-
     if (!draggedElement) return;
-    newItems.splice(targetIndex, 0, draggedElement);
 
+    newItems.splice(targetIndex, 0, draggedElement);
     setSortedItems(newItems);
+  };
+
+  // Touch Event Handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent, item: CombinedItem) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    setTouchStartY(touch.clientY);
+    setTouchCurrentY(touch.clientY);
+    setDraggedItem(item);
+    setIsTouching(true);
+    console.log("Touch start:", item.name);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling
+
+    if (!touchStartY || !draggedItem) return;
+
+    const touch = e.touches[0];
+    if (!touch) return;
+    setTouchCurrentY(touch.clientY);
+
+    // Find element under touch
+    const elementBelow = document.elementFromPoint(
+      touch.clientX,
+      touch.clientY,
+    );
+    const listItem = elementBelow?.closest("li");
+
+    if (listItem) {
+      const itemId = listItem.getAttribute("data-item-id");
+      const itemType = listItem.getAttribute("data-item-type");
+
+      if (itemId && itemType) {
+        const targetItem = sortedItems.find(
+          (item) => item.id.toString() === itemId && item.type === itemType,
+        );
+
+        if (targetItem && targetItem.id !== draggedItem.id) {
+          // Same logic as handleDragOver
+          const newItems = [...sortedItems];
+          const dragIndex = newItems.findIndex(
+            (item) =>
+              item.id === draggedItem.id && item.type === draggedItem.type,
+          );
+          const targetIndex = newItems.findIndex(
+            (item) =>
+              item.id === targetItem.id && item.type === targetItem.type,
+          );
+
+          if (dragIndex !== -1 && targetIndex !== -1) {
+            const [draggedElement] = newItems.splice(dragIndex, 1);
+            if (draggedElement) {
+              newItems.splice(targetIndex, 0, draggedElement);
+              setSortedItems(newItems);
+            }
+          }
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (!draggedItem) return;
+
+    setIsTouching(false);
+    setTouchStartY(null);
+    setTouchCurrentY(null);
+
+    // Same logic as handleDragEnd
+    await handleDragEnd();
   };
 
   return (
@@ -146,8 +238,17 @@ export default function DriveContents(props: {
                     key={`folder-${item.id}`}
                     folder={item}
                     onDragStart={() => handleDragStart(item)}
-                    onDragEnd={() => handleDragEnd(item)}
+                    onDragEnd={() => handleDragEnd()}
                     onDragOver={(e) => handleDragOver(e, item)}
+                    onTouchStart={(e) => handleTouchStart(e, item)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    data-item-id={item.id}
+                    data-item-type="folder"
+                    isDragging={
+                      draggedItem?.id === item.id &&
+                      draggedItem?.type === item.type
+                    }
                   />
                 );
               } else {
@@ -156,8 +257,17 @@ export default function DriveContents(props: {
                     key={`file-${item.id}`}
                     file={item}
                     onDragStart={() => handleDragStart(item)}
-                    onDragEnd={() => handleDragEnd(item)}
+                    onDragEnd={() => handleDragEnd()}
                     onDragOver={(e) => handleDragOver(e, item)}
+                    onTouchStart={(e) => handleTouchStart(e, item)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    data-item-id={item.id}
+                    data-item-type="file"
+                    isDragging={
+                      draggedItem?.id === item.id &&
+                      draggedItem?.type === item.type
+                    }
                   />
                 );
               }
@@ -209,6 +319,20 @@ export default function DriveContents(props: {
           </div>
           <p className="mt-2 text-sm text-neutral-400">Max file size: 1GB</p>
         </div>
+
+        {/* Touch Feedback for mobile */}
+        {isTouching && draggedItem && (
+          <div
+            className="pointer-events-none fixed z-50 rounded bg-blue-500 p-2 text-white shadow-lg"
+            style={{
+              left: "50%",
+              top: touchCurrentY ?? 0,
+              transform: "translateX(-50%)",
+            }}
+          >
+            Moving: {draggedItem.name}
+          </div>
+        )}
       </div>
     </div>
   );

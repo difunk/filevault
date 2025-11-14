@@ -245,8 +245,8 @@ export async function reorderItems(
   try {
     await MUTATIONS.reorderItems(items, session.userId);
 
-    const c = await cookies();
-    c.set("force-refresh", JSON.stringify(Math.random()));
+    // const c = await cookies();
+    // c.set("force-refresh", JSON.stringify(Math.random()));
 
     return { success: true };
   } catch (error) {

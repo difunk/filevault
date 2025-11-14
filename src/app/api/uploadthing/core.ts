@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import {
   createUploadthing,
   UploadThingError,
@@ -54,6 +55,9 @@ export const uploadRouter = {
         },
         userId: metadata.userId,
       });
+
+      const c = await cookies();
+      c.set("force-refresh", JSON.stringify(Math.random()));
 
       // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
       return { uploadedBy: metadata.userId };
