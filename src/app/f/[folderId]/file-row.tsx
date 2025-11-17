@@ -21,7 +21,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
-import { useState } from "react";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -93,12 +92,11 @@ export function FileRow(props: {
                     rel="noopener noreferrer"
                     draggable="false"
                     onClick={(e) => {
-                      // Verhindern dass Link sich öffnet wenn onClick verhindert wird
                       if (props.onClick) {
-                        const result = props.onClick(e as any);
-                        if (result === false || e.isDefaultPrevented()) {
+                        const result = props.onClick(e);
+                        if (result === false) {
                           e.preventDefault();
-                          return false;
+                          e.stopPropagation();
                         }
                       }
                     }}
@@ -165,12 +163,11 @@ export function FileRow(props: {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {
-                  // Verhindern dass Link sich öffnet wenn onClick verhindert wird
                   if (props.onClick) {
-                    const result = props.onClick(e as any);
-                    if (result === false || e.isDefaultPrevented()) {
+                    const result = props.onClick(e);
+                    if (result === false) {
                       e.preventDefault();
-                      return false;
+                      e.stopPropagation();
                     }
                   }
                 }}
@@ -248,8 +245,6 @@ export function FolderRow(props: {
   const { folder } = props;
   const navigate = useRouter();
 
-  const [isDragging, setIsDragging] = useState(false);
-
   return (
     <li
       className={`border-b border-neutral-700 transition-all duration-200 ${
@@ -259,11 +254,9 @@ export function FolderRow(props: {
       }`}
       draggable="true"
       onDragStart={(_e) => {
-        setIsDragging(true);
         props.onDragStart?.();
       }}
       onDragEnd={(_e) => {
-        setIsDragging(false);
         props.onDragEnd?.();
       }}
       onDragOver={(e) => {
@@ -290,16 +283,11 @@ export function FolderRow(props: {
                   className="block truncate font-medium text-neutral-100 hover:text-blue-400"
                   draggable="false"
                   onClick={(e) => {
-                    if (isDragging) {
-                      e.preventDefault();
-                      return;
-                    }
-
                     if (props.onClick) {
                       const result = props.onClick(e);
-                      if (result === false || e.isDefaultPrevented()) {
+                      if (result === false) {
                         e.preventDefault();
-                        return false;
+                        e.stopPropagation();
                       }
                     }
                   }}
@@ -359,16 +347,11 @@ export function FolderRow(props: {
               href={`/f/${folder.id}`}
               className="flex items-center text-neutral-100 transition-colors hover:text-neutral-300"
               onClick={(e) => {
-                if (isDragging) {
-                  e.preventDefault(); // Navigation beim Drag verhindern
-                  return;
-                }
-                
                 if (props.onClick) {
                   const result = props.onClick(e);
-                  if (result === false || e.isDefaultPrevented()) {
+                  if (result === false) {
                     e.preventDefault();
-                    return false;
+                    e.stopPropagation();
                   }
                 }
               }}

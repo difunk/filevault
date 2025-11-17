@@ -8,13 +8,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { UploadButton } from "~/components/ui/uploadthing";
 import { useRouter } from "next/navigation";
 import { createFolder, reorderItems } from "~/server/actions";
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-  useCallback,
-} from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
@@ -53,9 +47,11 @@ export default function DriveContents(props: {
   // Touch State for mobile
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [isTouching, setIsTouching] = useState(false);
   const [touchTimer, setTouchTimer] = useState<NodeJS.Timeout | null>(null);
   const [preventNextClick, setPreventNextClick] = useState(false);
+  const [hasMoved, setHasMoved] = useState(false);
 
   const handleDragStart = (item: CombinedItem) => {
     setDraggedItem(item);
@@ -109,8 +105,6 @@ export default function DriveContents(props: {
 
   // Touch Event Handlers for mobile
   const handleTouchStart = (e: React.TouchEvent, item: CombinedItem) => {
-    e.preventDefault();
-
     const touch = e.touches[0];
     if (!touch) return;
 
@@ -119,70 +113,85 @@ export default function DriveContents(props: {
       clearTimeout(touchTimer);
     }
 
+    // Reset states
     setTouchStartY(touch.clientY);
     setTouchCurrentY(touch.clientY);
+    setTouchStartX(touch.clientX);
+    setHasMoved(false);
 
-    // Set timer for 1 second hold
+    // Set timer for 400ms hold
     const timer = setTimeout(() => {
-      setDraggedItem(item);
-      setIsTouching(true);
-      console.log("Touch start (after 1s hold):", item.name);
-    }, 1000);
+      // Only start drag if user hasn't moved much
+      if (!hasMoved) {
+        setDraggedItem(item);
+        setIsTouching(true);
+        console.log("Touch start (after 400ms hold):", item.name);
+      }
+    }, 400);
 
     setTouchTimer(timer);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    // If user moves finger before 1 second, cancel the timer
-    if (touchTimer && !isTouching) {
+    const touch = e.touches[0];
+    if (!touch || !touchStartX || !touchStartY) return;
+
+    // Calculate movement distance
+    const deltaX = Math.abs(touch.clientX - touchStartX);
+    const deltaY = Math.abs(touch.clientY - touchStartY);
+    const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // If user moves more than 10px, consider it movement
+    if (totalMovement > 10) {
+      setHasMoved(true);
+    }
+
+    // If user moves finger before drag starts, cancel the timer
+    if (touchTimer && !isTouching && totalMovement > 10) {
       clearTimeout(touchTimer);
       setTouchTimer(null);
-      setTouchStartY(null);
-      setTouchCurrentY(null);
       return;
     }
 
-    if (!touchStartY || !draggedItem) return;
+    // If we're in drag mode, handle drag logic
+    if (isTouching && draggedItem) {
+      e.preventDefault();
+      setTouchCurrentY(touch.clientY);
 
-    e.preventDefault();
+      // Find element under touch
+      const elementBelow = document.elementFromPoint(
+        touch.clientX,
+        touch.clientY,
+      );
+      const listItem = elementBelow?.closest("li");
 
-    const touch = e.touches[0];
-    if (!touch) return;
-    setTouchCurrentY(touch.clientY);
+      if (listItem) {
+        const itemId = listItem.getAttribute("data-item-id");
+        const itemType = listItem.getAttribute("data-item-type");
 
-    // Find element under touch
-    const elementBelow = document.elementFromPoint(
-      touch.clientX,
-      touch.clientY,
-    );
-    const listItem = elementBelow?.closest("li");
-
-    if (listItem) {
-      const itemId = listItem.getAttribute("data-item-id");
-      const itemType = listItem.getAttribute("data-item-type");
-
-      if (itemId && itemType) {
-        const targetItem = sortedItems.find(
-          (item) => item.id.toString() === itemId && item.type === itemType,
-        );
-
-        if (targetItem && targetItem.id !== draggedItem.id) {
-          // Same logic as handleDragOver
-          const newItems = [...sortedItems];
-          const dragIndex = newItems.findIndex(
-            (item) =>
-              item.id === draggedItem.id && item.type === draggedItem.type,
-          );
-          const targetIndex = newItems.findIndex(
-            (item) =>
-              item.id === targetItem.id && item.type === targetItem.type,
+        if (itemId && itemType) {
+          const targetItem = sortedItems.find(
+            (item) => item.id.toString() === itemId && item.type === itemType,
           );
 
-          if (dragIndex !== -1 && targetIndex !== -1) {
-            const [draggedElement] = newItems.splice(dragIndex, 1);
-            if (draggedElement) {
-              newItems.splice(targetIndex, 0, draggedElement);
-              setSortedItems(newItems);
+          if (targetItem && targetItem.id !== draggedItem.id) {
+            // Same logic as handleDragOver
+            const newItems = [...sortedItems];
+            const dragIndex = newItems.findIndex(
+              (item) =>
+                item.id === draggedItem.id && item.type === draggedItem.type,
+            );
+            const targetIndex = newItems.findIndex(
+              (item) =>
+                item.id === targetItem.id && item.type === targetItem.type,
+            );
+
+            if (dragIndex !== -1 && targetIndex !== -1) {
+              const [draggedElement] = newItems.splice(dragIndex, 1);
+              if (draggedElement) {
+                newItems.splice(targetIndex, 0, draggedElement);
+                setSortedItems(newItems);
+              }
             }
           }
         }
@@ -191,41 +200,60 @@ export default function DriveContents(props: {
   };
 
   const handleTouchEnd = async () => {
-    // Clear timer if touch ends before 1 second
+    // Clear timer if touch ends before drag starts
     if (touchTimer) {
       clearTimeout(touchTimer);
       setTouchTimer(null);
     }
 
-    if (!draggedItem) {
-      // Reset touch state if no drag was initiated
+    const wasDragging = draggedItem !== null && isTouching;
+
+    // If no drag was initiated, it's a normal click
+    if (!draggedItem || !isTouching) {
+      // Reset all states
       setTouchStartY(null);
       setTouchCurrentY(null);
+      setTouchStartX(null);
       setIsTouching(false);
-      return;
+      setHasMoved(false);
+      return; // Allow normal click behavior
     }
 
-    setPreventNextClick(true);
+    // We had a drag operation - prevent next click
+    if (wasDragging) {
+      setPreventNextClick(true);
+      setTimeout(() => {
+        setPreventNextClick(false);
+      }, 400); // Longer timeout for safety
+    }
 
-    setTimeout(() => {
-      setPreventNextClick(false);
-    }, 200);
-
+    // Reset all states
     setIsTouching(false);
     setTouchStartY(null);
     setTouchCurrentY(null);
+    setTouchStartX(null);
+    setHasMoved(false);
 
     await handleDragEnd();
   };
 
   // Click handler to prevent opening after drag & drop
   const handleItemClick = (e: React.MouseEvent, item: CombinedItem) => {
+    console.log(
+      "Click detected for:",
+      item.name,
+      "preventNextClick:",
+      preventNextClick,
+    );
+
     if (preventNextClick) {
       e.preventDefault();
       e.stopPropagation();
-      console.log("Prevented click after drag & drop for:", item.name);
+      console.log("🚫 Prevented click after drag & drop for:", item.name);
       return false;
     }
+
+    console.log("✅ Allowing normal click for:", item.name);
     // Return undefined (void) for normal clicks
   };
 
@@ -281,14 +309,7 @@ export default function DriveContents(props: {
               <div className="col-span-2">Actions</div>
             </div>
           </div>
-          <ul
-            style={{
-              WebkitUserSelect: 'none',
-              userSelect: 'none',
-              WebkitTouchCallout: 'none',
-              WebkitTapHighlightColor: 'transparent'
-            }}
-          >
+          <ul>
             {sortedItems.map((item) => {
               if (item.type === "folder") {
                 return (
