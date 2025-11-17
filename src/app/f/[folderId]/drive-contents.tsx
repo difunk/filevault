@@ -119,15 +119,15 @@ export default function DriveContents(props: {
     setTouchStartX(touch.clientX);
     setHasMoved(false);
 
-    // Set timer for 400ms hold
+    // Set timer for 600ms hold
     const timer = setTimeout(() => {
       // Only start drag if user hasn't moved much
       if (!hasMoved) {
         setDraggedItem(item);
         setIsTouching(true);
-        console.log("Touch start (after 400ms hold):", item.name);
+        console.log("Drag mode activated for:", item.name);
       }
-    }, 400);
+    }, 600);
 
     setTouchTimer(timer);
   };
@@ -175,7 +175,6 @@ export default function DriveContents(props: {
           );
 
           if (targetItem && targetItem.id !== draggedItem.id) {
-            // Same logic as handleDragOver
             const newItems = [...sortedItems];
             const dragIndex = newItems.findIndex(
               (item) =>
@@ -200,7 +199,6 @@ export default function DriveContents(props: {
   };
 
   const handleTouchEnd = async () => {
-    // Clear timer if touch ends before drag starts
     if (touchTimer) {
       clearTimeout(touchTimer);
       setTouchTimer(null);
@@ -208,23 +206,20 @@ export default function DriveContents(props: {
 
     const wasDragging = draggedItem !== null && isTouching;
 
-    // If no drag was initiated, it's a normal click
     if (!draggedItem || !isTouching) {
-      // Reset all states
       setTouchStartY(null);
       setTouchCurrentY(null);
       setTouchStartX(null);
       setIsTouching(false);
       setHasMoved(false);
-      return; // Allow normal click behavior
+      return;
     }
 
-    // We had a drag operation - prevent next click
     if (wasDragging) {
       setPreventNextClick(true);
       setTimeout(() => {
         setPreventNextClick(false);
-      }, 400); // Longer timeout for safety
+      }, 400);
     }
 
     // Reset all states
@@ -249,7 +244,7 @@ export default function DriveContents(props: {
     if (preventNextClick) {
       e.preventDefault();
       e.stopPropagation();
-      console.log("🚫 Prevented click after drag & drop for:", item.name);
+      console.log("Prevented click after drag & drop for:", item.name);
       return false;
     }
 
@@ -309,7 +304,7 @@ export default function DriveContents(props: {
               <div className="col-span-2">Actions</div>
             </div>
           </div>
-          <ul>
+          <ul style={{ WebkitTapHighlightColor: "transparent" }}>
             {sortedItems.map((item) => {
               if (item.type === "folder") {
                 return (

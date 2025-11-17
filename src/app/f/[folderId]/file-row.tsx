@@ -12,7 +12,6 @@ import {
   deleteFolder,
   renameFile,
   renameFolder,
-  reorderItems,
 } from "~/server/actions";
 import { useRouter } from "next/navigation";
 import {
@@ -75,6 +74,13 @@ export function FileRow(props: {
       onClick={props.onClick}
       data-item-id={props["data-item-id"]}
       data-item-type={props["data-item-type"]}
+      style={{
+        WebkitUserSelect: "none",
+        userSelect: "none",
+        WebkitTouchCallout: "none",
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "none",
+      }}
     >
       {/* Mobile Layout (< 640px) */}
       <div className="block px-4 py-4 sm:hidden">
@@ -269,6 +275,13 @@ export function FolderRow(props: {
       onClick={props.onClick}
       data-item-id={props["data-item-id"]}
       data-item-type={props["data-item-type"]}
+      style={{
+        WebkitUserSelect: "none",
+        userSelect: "none",
+        WebkitTouchCallout: "none",
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "none",
+      }}
     >
       {/* Mobile Layout (< 640px) */}
       <div className="block px-4 py-4 sm:hidden">
