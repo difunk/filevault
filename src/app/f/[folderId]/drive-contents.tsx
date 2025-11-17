@@ -55,6 +55,7 @@ export default function DriveContents(props: {
   const [touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
   const [isTouching, setIsTouching] = useState(false);
   const [touchTimer, setTouchTimer] = useState<NodeJS.Timeout | null>(null);
+  const [preventNextClick, setPreventNextClick] = useState(false);
 
   const handleDragStart = (item: CombinedItem) => {
     setDraggedItem(item);
@@ -108,6 +109,8 @@ export default function DriveContents(props: {
 
   // Touch Event Handlers for mobile
   const handleTouchStart = (e: React.TouchEvent, item: CombinedItem) => {
+    e.preventDefault();
+
     const touch = e.touches[0];
     if (!touch) return;
 
@@ -202,12 +205,28 @@ export default function DriveContents(props: {
       return;
     }
 
+    setPreventNextClick(true);
+
+    setTimeout(() => {
+      setPreventNextClick(false);
+    }, 200);
+
     setIsTouching(false);
     setTouchStartY(null);
     setTouchCurrentY(null);
 
-    // Same logic as handleDragEnd
     await handleDragEnd();
+  };
+
+  // Click handler to prevent opening after drag & drop
+  const handleItemClick = (e: React.MouseEvent, item: CombinedItem) => {
+    if (preventNextClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("Prevented click after drag & drop for:", item.name);
+      return false;
+    }
+    // Return undefined (void) for normal clicks
   };
 
   return (
@@ -262,7 +281,14 @@ export default function DriveContents(props: {
               <div className="col-span-2">Actions</div>
             </div>
           </div>
-          <ul>
+          <ul
+            style={{
+              WebkitUserSelect: 'none',
+              userSelect: 'none',
+              WebkitTouchCallout: 'none',
+              WebkitTapHighlightColor: 'transparent'
+            }}
+          >
             {sortedItems.map((item) => {
               if (item.type === "folder") {
                 return (
@@ -275,6 +301,7 @@ export default function DriveContents(props: {
                     onTouchStart={(e) => handleTouchStart(e, item)}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
+                    onClick={(e) => handleItemClick(e, item)}
                     data-item-id={item.id}
                     data-item-type="folder"
                     isDragging={
@@ -294,6 +321,7 @@ export default function DriveContents(props: {
                     onTouchStart={(e) => handleTouchStart(e, item)}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
+                    onClick={(e) => handleItemClick(e, item)}
                     data-item-id={item.id}
                     data-item-type="file"
                     isDragging={

@@ -44,6 +44,7 @@ export function FileRow(props: {
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: () => void;
+  onClick?: (e: React.MouseEvent) => void | boolean;
   "data-item-id"?: number;
   "data-item-type"?: string;
   isDragging?: boolean;
@@ -72,6 +73,7 @@ export function FileRow(props: {
       onTouchStart={props.onTouchStart}
       onTouchMove={props.onTouchMove}
       onTouchEnd={props.onTouchEnd}
+      onClick={props.onClick}
       data-item-id={props["data-item-id"]}
       data-item-type={props["data-item-type"]}
     >
@@ -90,6 +92,16 @@ export function FileRow(props: {
                     target="_blank"
                     rel="noopener noreferrer"
                     draggable="false"
+                    onClick={(e) => {
+                      // Verhindern dass Link sich öffnet wenn onClick verhindert wird
+                      if (props.onClick) {
+                        const result = props.onClick(e as any);
+                        if (result === false || e.isDefaultPrevented()) {
+                          e.preventDefault();
+                          return false;
+                        }
+                      }
+                    }}
                   >
                     {file.name}
                   </a>
@@ -152,6 +164,16 @@ export function FileRow(props: {
                 className="flex items-center text-neutral-100 transition-colors hover:text-neutral-300"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  // Verhindern dass Link sich öffnet wenn onClick verhindert wird
+                  if (props.onClick) {
+                    const result = props.onClick(e as any);
+                    if (result === false || e.isDefaultPrevented()) {
+                      e.preventDefault();
+                      return false;
+                    }
+                  }
+                }}
               >
                 <FileIcon className="mr-3 text-neutral-400" size={20} />
                 {file.name}
@@ -217,6 +239,7 @@ export function FolderRow(props: {
   onDragOver: (e: React.DragEvent) => void;
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
+  onClick?: (e: React.MouseEvent) => void | boolean;
   onTouchEnd?: () => void;
   "data-item-id"?: number;
   "data-item-type"?: string;
@@ -250,6 +273,7 @@ export function FolderRow(props: {
       onTouchStart={props.onTouchStart}
       onTouchMove={props.onTouchMove}
       onTouchEnd={props.onTouchEnd}
+      onClick={props.onClick}
       data-item-id={props["data-item-id"]}
       data-item-type={props["data-item-type"]}
     >
@@ -265,6 +289,20 @@ export function FolderRow(props: {
                   href={`/f/${folder.id}`}
                   className="block truncate font-medium text-neutral-100 hover:text-blue-400"
                   draggable="false"
+                  onClick={(e) => {
+                    if (isDragging) {
+                      e.preventDefault();
+                      return;
+                    }
+
+                    if (props.onClick) {
+                      const result = props.onClick(e);
+                      if (result === false || e.isDefaultPrevented()) {
+                        e.preventDefault();
+                        return false;
+                      }
+                    }
+                  }}
                 >
                   {folder.name}
                 </Link>
@@ -323,6 +361,15 @@ export function FolderRow(props: {
               onClick={(e) => {
                 if (isDragging) {
                   e.preventDefault(); // Navigation beim Drag verhindern
+                  return;
+                }
+                
+                if (props.onClick) {
+                  const result = props.onClick(e);
+                  if (result === false || e.isDefaultPrevented()) {
+                    e.preventDefault();
+                    return false;
+                  }
                 }
               }}
             >
