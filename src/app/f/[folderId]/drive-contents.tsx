@@ -54,6 +54,7 @@ export default function DriveContents(props: {
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
   const [isTouching, setIsTouching] = useState(false);
+  const [touchTimer, setTouchTimer] = useState<NodeJS.Timeout | null>(null);
 
   const handleDragStart = (item: CombinedItem) => {
     setDraggedItem(item);
@@ -98,8 +99,6 @@ export default function DriveContents(props: {
 
     if (dragIndex === -1 || targetIndex === -1) return;
 
-
-
     const [draggedElement] = newItems.splice(dragIndex, 1);
     if (!draggedElement) return;
 
@@ -111,17 +110,38 @@ export default function DriveContents(props: {
   const handleTouchStart = (e: React.TouchEvent, item: CombinedItem) => {
     const touch = e.touches[0];
     if (!touch) return;
+
+    // Clear any existing timer
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+    }
+
     setTouchStartY(touch.clientY);
     setTouchCurrentY(touch.clientY);
-    setDraggedItem(item);
-    setIsTouching(true);
-    console.log("Touch start:", item.name);
+
+    // Set timer for 1 second hold
+    const timer = setTimeout(() => {
+      setDraggedItem(item);
+      setIsTouching(true);
+      console.log("Touch start (after 1s hold):", item.name);
+    }, 1000);
+
+    setTouchTimer(timer);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault(); // Prevent scrolling
+    // If user moves finger before 1 second, cancel the timer
+    if (touchTimer && !isTouching) {
+      clearTimeout(touchTimer);
+      setTouchTimer(null);
+      setTouchStartY(null);
+      setTouchCurrentY(null);
+      return;
+    }
 
     if (!touchStartY || !draggedItem) return;
+
+    e.preventDefault();
 
     const touch = e.touches[0];
     if (!touch) return;
@@ -168,7 +188,19 @@ export default function DriveContents(props: {
   };
 
   const handleTouchEnd = async () => {
-    if (!draggedItem) return;
+    // Clear timer if touch ends before 1 second
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      setTouchTimer(null);
+    }
+
+    if (!draggedItem) {
+      // Reset touch state if no drag was initiated
+      setTouchStartY(null);
+      setTouchCurrentY(null);
+      setIsTouching(false);
+      return;
+    }
 
     setIsTouching(false);
     setTouchStartY(null);
