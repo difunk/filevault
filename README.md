@@ -127,10 +127,10 @@ npm run db:studio
 - [x] Dateien löschen
 - [x] Dateien umbenennen
 - [x] Ordner erstellen
+- [x] Dateien und Ordner per Drag-and-Drop verschieben
 
 ### 🔄 In Entwicklung
 
-- [ ] Dateien und Ordner per Drag-and-Drop verschieben
 - [ ] Ordner verwalten
 - [ ] Datei-Sharing
 - [ ] Such-Funktionalität

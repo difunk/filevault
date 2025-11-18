@@ -136,6 +136,20 @@ export function FileRow(props: {
             <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
               <DropdownMenuItem
                 onClick={async () => {
+                  if (!file.url) return;
+
+                  try {
+                    await navigator.clipboard.writeText(file.url);
+                    window.alert("share link copied to clipboard");
+                  } catch {
+                    window.prompt("copy this share link:", file.url);
+                  }
+                }}
+              >
+                Share File
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
                   const fileName = window.prompt("Enter file name:", file.name);
                   if (fileName?.trim()) {
                     await renameFile(file.id, file.ownerId, fileName.trim());
@@ -224,6 +238,20 @@ export function FileRow(props: {
                 <EllipsisVertical size={16} />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
+                <DropdownMenuItem
+                  onClick={async () => {
+                    if (!file.url) return;
+
+                    try {
+                      await navigator.clipboard.writeText(file.url);
+                      window.alert("share link copied to clipboard");
+                    } catch {
+                      window.prompt("copy this share link:", file.url);
+                    }
+                  }}
+                >
+                  Share File
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
                     const fileName = window.prompt("Enter file name:");
