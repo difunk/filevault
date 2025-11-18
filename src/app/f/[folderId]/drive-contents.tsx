@@ -44,18 +44,16 @@ export default function DriveContents(props: {
 
   const [draggedItem, setDraggedItem] = useState<CombinedItem | null>(null);
 
-  // Touch State for mobile
+  // Mobile touch state (iOS-friendly long-press drag)
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [isTouching, setIsTouching] = useState(false);
-  const [touchTimer, setTouchTimer] = useState<NodeJS.Timeout | null>(null);
-  const [preventNextClick, setPreventNextClick] = useState(false);
-  const [hasMoved, setHasMoved] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [preventClick, setPreventClick] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
 
   const handleDragStart = (item: CombinedItem) => {
     setDraggedItem(item);
-    console.log(item);
   };
 
   const handleDragEnd = async () => {
@@ -72,9 +70,7 @@ export default function DriveContents(props: {
     try {
       await reorderItems(reorderedItems);
 
-      setTimeout(() => {
-        navigate.refresh();
-      }, 100);
+      navigate.refresh();
     } catch (error) {
       console.error(error);
       navigate.refresh();
@@ -103,153 +99,117 @@ export default function DriveContents(props: {
     setSortedItems(newItems);
   };
 
-  // Touch Event Handlers for mobile
+  // Touch Event Handlers for mobile - long-press to start drag
   const handleTouchStart = (e: React.TouchEvent, item: CombinedItem) => {
     const touch = e.touches[0];
     if (!touch) return;
 
-    // Clear any existing timer
-    if (touchTimer) {
-      clearTimeout(touchTimer);
-    }
-
-    // Reset states
+    setTouchStartX(touch.clientX);
     setTouchStartY(touch.clientY);
     setTouchCurrentY(touch.clientY);
-    setTouchStartX(touch.clientX);
-    setHasMoved(false);
+    setIsDragActive(false);
+    setPreventClick(false);
 
-    // Set timer for 600ms hold
-    const timer = setTimeout(() => {
-      // Only start drag if user hasn't moved much
-      if (!hasMoved) {
-        setDraggedItem(item);
-        setIsTouching(true);
-        console.log("Drag mode activated for:", item.name);
-      }
-    }, 600);
+    if (longPressTimer !== null) {
+      window.clearTimeout(longPressTimer);
+    }
 
-    setTouchTimer(timer);
+    const timerId = window.setTimeout(() => {
+      setDraggedItem(item);
+      setIsDragActive(true);
+      setPreventClick(true);
+      if ("vibrate" in navigator) navigator.vibrate(30);
+    }, 250);
+
+    setLongPressTimer(timerId);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     const touch = e.touches[0];
-    if (!touch || !touchStartX || !touchStartY) return;
+    if (!touch || touchStartX == null || touchStartY == null) return;
 
-    // Calculate movement distance
     const deltaX = Math.abs(touch.clientX - touchStartX);
     const deltaY = Math.abs(touch.clientY - touchStartY);
-    const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    // If user moves more than 10px, consider it movement
-    if (totalMovement > 10) {
-      setHasMoved(true);
-    }
-
-    // If user moves finger before drag starts, cancel the timer
-    if (touchTimer && !isTouching && totalMovement > 10) {
-      clearTimeout(touchTimer);
-      setTouchTimer(null);
+    if (!isDragActive && (deltaX > 10 || deltaY > 10)) {
+      if (longPressTimer !== null) {
+        window.clearTimeout(longPressTimer);
+        setLongPressTimer(null);
+      }
       return;
     }
 
-    // If we're in drag mode, handle drag logic
-    if (isTouching && draggedItem) {
+    if (isDragActive && draggedItem) {
       e.preventDefault();
+      e.stopPropagation();
+
       setTouchCurrentY(touch.clientY);
 
-      // Find element under touch
       const elementBelow = document.elementFromPoint(
         touch.clientX,
         touch.clientY,
       );
-      const listItem = elementBelow?.closest("li");
+      const listItem = elementBelow?.closest("li[data-item-id]");
 
-      if (listItem) {
-        const itemId = listItem.getAttribute("data-item-id");
-        const itemType = listItem.getAttribute("data-item-type");
+      if (!listItem) return;
 
-        if (itemId && itemType) {
-          const targetItem = sortedItems.find(
-            (item) => item.id.toString() === itemId && item.type === itemType,
-          );
+      const itemId = listItem.getAttribute("data-item-id");
+      const itemType = listItem.getAttribute("data-item-type") as
+        | "file"
+        | "folder"
+        | null;
 
-          if (targetItem && targetItem.id !== draggedItem.id) {
-            const newItems = [...sortedItems];
-            const dragIndex = newItems.findIndex(
-              (item) =>
-                item.id === draggedItem.id && item.type === draggedItem.type,
-            );
-            const targetIndex = newItems.findIndex(
-              (item) =>
-                item.id === targetItem.id && item.type === targetItem.type,
-            );
+      if (!itemId || !itemType) return;
 
-            if (dragIndex !== -1 && targetIndex !== -1) {
-              const [draggedElement] = newItems.splice(dragIndex, 1);
-              if (draggedElement) {
-                newItems.splice(targetIndex, 0, draggedElement);
-                setSortedItems(newItems);
-              }
-            }
-          }
-        }
-      }
+      const targetItem = sortedItems.find(
+        (item) => item.id.toString() === itemId && item.type === itemType,
+      );
+      if (!targetItem || targetItem.id === draggedItem.id) return;
+
+      const newItems = [...sortedItems];
+      const dragIndex = newItems.findIndex(
+        (item) => item.id === draggedItem.id && item.type === draggedItem.type,
+      );
+      const targetIndex = newItems.findIndex(
+        (item) => item.id === targetItem.id && item.type === targetItem.type,
+      );
+
+      if (dragIndex === -1 || targetIndex === -1) return;
+
+      const [draggedElement] = newItems.splice(dragIndex, 1);
+      if (!draggedElement) return;
+
+      newItems.splice(targetIndex, 0, draggedElement);
+      setSortedItems(newItems);
     }
   };
 
   const handleTouchEnd = async () => {
-    if (touchTimer) {
-      clearTimeout(touchTimer);
-      setTouchTimer(null);
+    if (longPressTimer !== null) {
+      window.clearTimeout(longPressTimer);
+      setLongPressTimer(null);
     }
 
-    const wasDragging = draggedItem !== null && isTouching;
-
-    if (!draggedItem || !isTouching) {
-      setTouchStartY(null);
-      setTouchCurrentY(null);
-      setTouchStartX(null);
-      setIsTouching(false);
-      setHasMoved(false);
-      return;
+    if (isDragActive && draggedItem) {
+      await handleDragEnd();
     }
 
-    if (wasDragging) {
-      setPreventNextClick(true);
-      setTimeout(() => {
-        setPreventNextClick(false);
-      }, 400);
-    }
-
-    // Reset all states
-    setIsTouching(false);
+    setIsDragActive(false);
+    setTouchStartX(null);
     setTouchStartY(null);
     setTouchCurrentY(null);
-    setTouchStartX(null);
-    setHasMoved(false);
 
-    await handleDragEnd();
+    if (preventClick) {
+      setTimeout(() => setPreventClick(false), 300);
+    }
   };
 
-  // Click handler to prevent opening after drag & drop
-  const handleItemClick = (e: React.MouseEvent, item: CombinedItem) => {
-    console.log(
-      "Click detected for:",
-      item.name,
-      "preventNextClick:",
-      preventNextClick,
-    );
-
-    if (preventNextClick) {
+  const handleItemClick = (e: React.MouseEvent, _item: CombinedItem) => {
+    if (isDragActive || preventClick) {
       e.preventDefault();
       e.stopPropagation();
-      console.log("Prevented click after drag & drop for:", item.name);
       return false;
     }
-
-    console.log("✅ Allowing normal click for:", item.name);
-    // Return undefined (void) for normal clicks
   };
 
   return (
@@ -396,17 +356,23 @@ export default function DriveContents(props: {
           <p className="mt-2 text-sm text-neutral-400">Max file size: 1GB</p>
         </div>
 
-        {/* Touch Feedback for mobile */}
-        {isTouching && draggedItem && (
+        {/* Enhanced Touch Feedback for mobile */}
+        {isDragActive && draggedItem && (
           <div
-            className="pointer-events-none fixed z-50 rounded bg-blue-500 p-2 text-white shadow-lg"
+            className="pointer-events-none fixed z-50 rounded-lg border border-blue-400 bg-blue-500 px-3 py-2 text-white shadow-xl"
             style={{
               left: "50%",
-              top: touchCurrentY ?? 0,
+              top: (touchCurrentY ?? 0) - 60,
               transform: "translateX(-50%)",
+              maxWidth: "280px",
+              fontSize: "14px",
+              fontWeight: "500",
             }}
           >
-            Moving: {draggedItem.name}
+            📱 Moving:{" "}
+            {draggedItem.name.length > 25
+              ? draggedItem.name.substring(0, 25) + "..."
+              : draggedItem.name}
           </div>
         )}
       </div>

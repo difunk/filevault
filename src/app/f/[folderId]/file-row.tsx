@@ -54,7 +54,7 @@ export function FileRow(props: {
     <li
       className={`border-b border-neutral-700 transition-all duration-200 ${
         props.isDragging
-          ? "z-10 scale-105 transform bg-blue-500/20 opacity-60 shadow-lg"
+          ? "dragging z-10 scale-105 transform bg-blue-500/20 opacity-60 shadow-lg"
           : "hover:bg-neutral-750 cursor-move"
       }`}
       draggable="true"
@@ -97,12 +97,17 @@ export function FileRow(props: {
                     target="_blank"
                     rel="noopener noreferrer"
                     draggable="false"
+                    onTouchStart={(e) => {
+                      // Prevent parent touch events from interfering
+                      e.stopPropagation();
+                    }}
                     onClick={(e) => {
                       if (props.onClick) {
                         const result = props.onClick(e);
                         if (result === false) {
                           e.preventDefault();
                           e.stopPropagation();
+                          return;
                         }
                       }
                     }}
@@ -168,12 +173,17 @@ export function FileRow(props: {
                 className="flex items-center text-neutral-100 transition-colors hover:text-neutral-300"
                 target="_blank"
                 rel="noopener noreferrer"
+                onTouchStart={(e) => {
+                  // Prevent parent touch events from interfering
+                  e.stopPropagation();
+                }}
                 onClick={(e) => {
                   if (props.onClick) {
                     const result = props.onClick(e);
                     if (result === false) {
                       e.preventDefault();
                       e.stopPropagation();
+                      return;
                     }
                   }
                 }}
@@ -255,7 +265,7 @@ export function FolderRow(props: {
     <li
       className={`border-b border-neutral-700 transition-all duration-200 ${
         props.isDragging
-          ? "z-10 scale-105 transform bg-blue-500/20 opacity-60 shadow-lg"
+          ? "dragging z-10 scale-105 transform bg-blue-500/20 opacity-60 shadow-lg"
           : "hover:bg-neutral-750 cursor-move"
       }`}
       draggable="true"
@@ -295,12 +305,17 @@ export function FolderRow(props: {
                   href={`/f/${folder.id}`}
                   className="block truncate font-medium text-neutral-100 hover:text-blue-400"
                   draggable="false"
+                  onTouchStart={(e) => {
+                    // Prevent parent touch events from interfering
+                    e.stopPropagation();
+                  }}
                   onClick={(e) => {
                     if (props.onClick) {
                       const result = props.onClick(e);
                       if (result === false) {
                         e.preventDefault();
                         e.stopPropagation();
+                        return;
                       }
                     }
                   }}
@@ -359,12 +374,17 @@ export function FolderRow(props: {
               draggable="false"
               href={`/f/${folder.id}`}
               className="flex items-center text-neutral-100 transition-colors hover:text-neutral-300"
+              onTouchStart={(e) => {
+                // Prevent parent touch events from interfering
+                e.stopPropagation();
+              }}
               onClick={(e) => {
                 if (props.onClick) {
                   const result = props.onClick(e);
                   if (result === false) {
                     e.preventDefault();
                     e.stopPropagation();
+                    return;
                   }
                 }
               }}
