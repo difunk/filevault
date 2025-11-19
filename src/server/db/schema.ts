@@ -21,6 +21,7 @@ export const files_table = createTable(
     name: text("name").notNull(),
     size: int("size").notNull(),
     url: text("url").notNull(),
+    shareToken: text("share_token"),
     position: bigint("position", { mode: "number" }).default(0),
     parent: bigint("parent", { mode: "number", unsigned: true }).notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),

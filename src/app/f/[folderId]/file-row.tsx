@@ -3,15 +3,18 @@ import {
   FileIcon,
   Trash2Icon,
   EllipsisVertical,
+  Link2,
 } from "lucide-react";
 import { folders_table, type files_table } from "~/server/db/schema";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import {
+  createFileShareLink,
   deleteFile,
   deleteFolder,
   renameFile,
   renameFolder,
+  revokeFileShareLink,
 } from "~/server/actions";
 import { useRouter } from "next/navigation";
 import {
@@ -88,7 +91,12 @@ export function FileRow(props: {
           {/* Linke Seite: Icon + Datei Info */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3">
-              <FileIcon className="flex-shrink-0 text-neutral-400" size={18} />
+              <div className="relative flex-shrink-0">
+                <FileIcon className="text-neutral-400" size={18} />
+                {file.shareToken && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-green-400" />
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 {file.url ? (
                   <a
@@ -128,51 +136,85 @@ export function FileRow(props: {
             </div>
           </div>
 
-          {/* Rechte Seite: 3-Punkte Menü */}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-100">
-              <EllipsisVertical size={16} />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
-              <DropdownMenuItem
-                onClick={async () => {
-                  if (!file.url) return;
+          {/* Rechte Seite: Share + Aktionen */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                const result = await createFileShareLink(file.id);
 
-                  try {
-                    await navigator.clipboard.writeText(file.url);
-                    window.alert("share link copied to clipboard");
-                  } catch {
-                    window.prompt("copy this share link:", file.url);
-                  }
-                }}
-              >
-                Share File
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={async () => {
-                  const fileName = window.prompt("Enter file name:", file.name);
-                  if (fileName?.trim()) {
-                    await renameFile(file.id, file.ownerId, fileName.trim());
-                    navigate.refresh();
-                  }
-                }}
-                className="hover:bg-neutral-700 hover:text-neutral-100"
-              >
-                Rename
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={async () => {
-                  if (window.confirm(`Delete "${file.name}"?`)) {
-                    await deleteFile(file.id);
-                    navigate.refresh();
-                  }
-                }}
-                className="text-red-400 hover:bg-red-600/20 hover:text-red-300"
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                if (typeof result !== "string") {
+                  window.alert(result?.error ?? "Could not create share link");
+                  return;
+                }
+
+                try {
+                  await navigator.clipboard.writeText(result);
+                  window.alert(
+                    file.shareToken
+                      ? "Share link copied to clipboard"
+                      : "Share link created and copied to clipboard",
+                  );
+                } catch {
+                  window.prompt("Copy this share link:", result);
+                }
+
+                navigate.refresh();
+              }}
+              aria-label={
+                file.shareToken ? "Copy share link" : "Create share link"
+              }
+              className="h-9 w-9 text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-100"
+            >
+              <Link2 size={16} />
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-100">
+                <EllipsisVertical size={16} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
+                {file.shareToken && (
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      await revokeFileShareLink(file.id);
+                      window.alert("sharing has been revoked");
+                      navigate.refresh();
+                    }}
+                  >
+                    Disable share link
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={async () => {
+                    const fileName = window.prompt(
+                      "Enter file name:",
+                      file.name,
+                    );
+                    if (fileName?.trim()) {
+                      await renameFile(file.id, file.ownerId, fileName.trim());
+                      navigate.refresh();
+                    }
+                  }}
+                  className="hover:bg-neutral-700 hover:text-neutral-100"
+                >
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    if (window.confirm(`Delete "${file.name}"?`)) {
+                      await deleteFile(file.id);
+                      navigate.refresh();
+                    }
+                  }}
+                  className="text-red-400 hover:bg-red-600/20 hover:text-red-300"
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -202,12 +244,22 @@ export function FileRow(props: {
                   }
                 }}
               >
-                <FileIcon className="mr-3 text-neutral-400" size={20} />
+                <div className="relative mr-3 flex-shrink-0">
+                  <FileIcon className="text-neutral-400" size={20} />
+                  {file.shareToken && (
+                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-green-400" />
+                  )}
+                </div>
                 {file.name}
               </a>
             ) : (
               <div className="flex items-center text-neutral-100">
-                <FileIcon className="mr-3 text-neutral-400" size={20} />
+                <div className="relative mr-3 flex-shrink-0">
+                  <FileIcon className="text-neutral-400" size={20} />
+                  {file.shareToken && (
+                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-green-400" />
+                  )}
+                </div>
                 {file.name}
               </div>
             )}
@@ -218,13 +270,47 @@ export function FileRow(props: {
           <div className="col-span-2 text-neutral-400">
             <span>{formatFileSize(file.size)}</span>
           </div>
-          <div className="col-span-1">
+          <div className="col-span-1 flex items-center justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={async () => {
-                await deleteFile(file.id);
+                const result = await createFileShareLink(file.id);
+
+                if (typeof result !== "string") {
+                  window.alert(result?.error ?? "Could not create share link");
+                  return;
+                }
+
+                try {
+                  await navigator.clipboard.writeText(result);
+                  window.alert(
+                    file.shareToken
+                      ? "Share link copied to clipboard"
+                      : "Share link created and copied to clipboard",
+                  );
+                } catch {
+                  window.prompt("Copy this share link:", result);
+                }
+
                 navigate.refresh();
+              }}
+              aria-label={
+                file.shareToken ? "Copy share link" : "Create share link"
+              }
+              className="h-9 w-9 text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-neutral-100"
+            >
+              <Link2 size={16} />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                if (window.confirm(`Delete "${file.name}"?`)) {
+                  await deleteFile(file.id);
+                  navigate.refresh();
+                }
               }}
               aria-label="Delete file"
               className="h-9 w-9 text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-red-400"
@@ -238,20 +324,17 @@ export function FileRow(props: {
                 <EllipsisVertical size={16} />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="z-50 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 shadow-xl">
-                <DropdownMenuItem
-                  onClick={async () => {
-                    if (!file.url) return;
-
-                    try {
-                      await navigator.clipboard.writeText(file.url);
-                      window.alert("share link copied to clipboard");
-                    } catch {
-                      window.prompt("copy this share link:", file.url);
-                    }
-                  }}
-                >
-                  Share File
-                </DropdownMenuItem>
+                {file.shareToken && (
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      await revokeFileShareLink(file.id);
+                      window.alert("sharing has been revoked");
+                      navigate.refresh();
+                    }}
+                  >
+                    Disable share link
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={async () => {
                     const fileName = window.prompt("Enter file name:");

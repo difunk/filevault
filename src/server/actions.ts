@@ -254,3 +254,47 @@ export async function reorderItems(
     return { error: "Failed to reorder items" };
   }
 }
+
+function generateShareToken() {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
+export async function createFileShareLink(fileId: number) {
+  const session = await auth();
+
+  if (!session.userId) {
+    return { error: "Unauthorized" };
+  }
+
+  const [file] = await db
+    .select()
+    .from(files_table)
+    .where(
+      and(eq(files_table.id, fileId), eq(files_table.ownerId, session.userId)),
+    );
+
+  if (!file) throw new Error("File not found or not owned by user");
+
+  if (file.shareToken) {
+    return `${process.env.NEXT_PUBLIC_APP_URL}/share/${file.shareToken}`;
+  }
+
+  const token = generateShareToken();
+
+  await db
+    .update(files_table)
+    .set({ shareToken: token })
+    .where(eq(files_table.id, fileId));
+
+  return `${process.env.NEXT_PUBLIC_APP_URL}/share/${token}`;
+}
+
+export async function revokeFileShareLink(fileId: number) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Not authenticated");
+
+  await db
+    .update(files_table)
+    .set({ shareToken: null })
+    .where(and(eq(files_table.id, fileId), eq(files_table.ownerId, userId)));
+}
