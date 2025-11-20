@@ -3,7 +3,10 @@ import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { file_shares_table, files_table } from "~/server/db/schema";
 
-export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { token: string } },
+) {
   const { token } = params;
 
   // Find share record by token
@@ -17,6 +20,9 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
   }
 
   const share = shares[0];
+  if (!share) {
+    return new Response("Not found", { status: 404 });
+  }
 
   // Get file details
   const files = await db
@@ -29,18 +35,22 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
   }
 
   const file = files[0];
+  if (!file) {
+    return new Response("Not found", { status: 404 });
+  }
 
   // Fetch the file from UploadThing
   const fileRes = await fetch(file.url);
   if (!fileRes.ok) {
-    return new Response("File not found", { status: 404 });
+    const fileRes = await fetch(file.url);
   }
 
   // Stream the file to the client
   return new Response(fileRes.body, {
     status: 200,
     headers: {
-      "Content-Type": fileRes.headers.get("Content-Type") || "application/octet-stream",
+      "Content-Type":
+        fileRes.headers.get("Content-Type") ?? "application/octet-stream",
       "Content-Disposition": `attachment; filename=\"${file.name}\"`,
       "Content-Length": file.size.toString(),
     },
