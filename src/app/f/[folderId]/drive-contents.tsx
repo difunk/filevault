@@ -10,31 +10,54 @@ import { useRouter } from "next/navigation";
 import { createFolder, reorderItems } from "~/server/actions";
 import React, { useEffect, useMemo, useState } from "react";
 
+interface FileShare {
+  id: number;
+  fileId: number;
+  ownerId: string;
+  token: string;
+  createdAt: Date;
+}
+
 export default function DriveContents(props: {
   files: (typeof files_table.$inferSelect)[];
   folders: (typeof folders_table.$inferSelect & { size: number })[];
   parents: (typeof folders_table.$inferSelect)[];
+  shareMap: Map<number, FileShare>;
 
   currentFolderId: number;
   rootFolderId: number;
 }) {
   const navigate = useRouter();
 
-  type CombinedItem =
-    | (typeof files_table.$inferSelect & { type: "file" })
-    | (typeof folders_table.$inferSelect & { size: number; type: "folder" });
+  type FileWithShare = typeof files_table.$inferSelect & {
+    type: "file";
+    share?: FileShare | null;
+  };
+  type FolderWithType = typeof folders_table.$inferSelect & {
+    size: number;
+    type: "folder";
+  };
+  type CombinedItem = FileWithShare | FolderWithType;
 
   const combinedItems = useMemo((): CombinedItem[] => {
-    const combined = [
-      ...props.folders.map((folder) => ({
-        ...folder,
-        type: "folder" as const,
-      })),
-      ...props.files.map((file) => ({ ...file, type: "file" as const })),
+    const combined: CombinedItem[] = [
+      ...props.folders.map(
+        (folder): FolderWithType => ({
+          ...folder,
+          type: "folder" as const,
+        }),
+      ),
+      ...props.files.map(
+        (file): FileWithShare => ({
+          ...file,
+          type: "file" as const,
+          share: props.shareMap.get(file.id) ?? null,
+        }),
+      ),
     ];
 
     return combined.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  }, [props.files, props.folders]);
+  }, [props.files, props.folders, props.shareMap]);
 
   const [sortedItems, setSortedItems] = useState(combinedItems);
 

@@ -5,6 +5,7 @@ import { db } from "~/server/db";
 import {
   files_table as filesSchema,
   folders_table as foldersSchema,
+  file_shares_table as sharesSchema,
 } from "~/server/db/schema";
 
 export const QUERIES = {
@@ -126,6 +127,23 @@ export const QUERIES = {
       .from(filesSchema)
       .where(eq(filesSchema.parent, folderId))
       .orderBy(asc(filesSchema.position), asc(filesSchema.id));
+  },
+
+  isFileShared: async function (fileId: number, userId: string) {
+    const shares = await db
+      .select()
+      .from(sharesSchema)
+      .where(
+        and(eq(sharesSchema.fileId, fileId), eq(sharesSchema.ownerId, userId)),
+      );
+    return shares.length > 0;
+  },
+
+  getSharesForUser: async function (userId: string) {
+    return db
+      .select()
+      .from(sharesSchema)
+      .where(eq(sharesSchema.ownerId, userId));
   },
 
   getMaxPosition: async function (folderId: number, type: "file" | "folder") {

@@ -22,12 +22,17 @@ export default async function GoogleDriveClone(props: {
     );
   }
 
-  const [folders, files, parents, rootFolder] = await Promise.all([
+  // Fetch all data in parallel
+  const [folders, files, parents, rootFolder, shares] = await Promise.all([
     QUERIES.getFoldersWithSizes(parsedFolderId, session.userId),
     QUERIES.getFiles(parsedFolderId),
     QUERIES.getAllParentsForFolder(parsedFolderId),
     QUERIES.getRootFolderForUser(session.userId),
+    QUERIES.getSharesForUser(session.userId),
   ]);
+
+  // Create a map of fileId -> share info for easy lookup
+  const shareMap = new Map(shares.map((share) => [share.fileId, share]));
 
   return (
     <DriveContents
@@ -36,6 +41,7 @@ export default async function GoogleDriveClone(props: {
       parents={parents}
       currentFolderId={parsedFolderId}
       rootFolderId={rootFolder?.id ?? 1}
+      shareMap={shareMap}
     />
   );
 }

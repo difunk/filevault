@@ -21,7 +21,6 @@ export const files_table = createTable(
     name: text("name").notNull(),
     size: int("size").notNull(),
     url: text("url").notNull(),
-    shareToken: text("share_token"),
     position: bigint("position", { mode: "number" }).default(0),
     parent: bigint("parent", { mode: "number", unsigned: true }).notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -57,3 +56,25 @@ export const folders_table = createTable(
 );
 
 export type DB_FolderType = typeof folders_table.$inferSelect;
+
+export const file_shares_table = createTable(
+  "file_shares",
+  {
+    id: bigint("id", { mode: "number", unsigned: true })
+      .primaryKey()
+      .autoincrement(),
+    fileId: bigint("file_id", { mode: "number", unsigned: true }).notNull(),
+    ownerId: text("owner_id").notNull(),
+    token: text("token").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => {
+    return [
+      index("file_id_index").on(t.fileId),
+      index("token_index").on(t.token),
+      index("owner_id_index").on(t.ownerId),
+    ];
+  },
+);
+
+export type DB_FileShareType = typeof file_shares_table.$inferSelect;

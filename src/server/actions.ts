@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { files_table, folders_table } from "./db/schema";
+import { files_table, folders_table, file_shares_table } from "./db/schema";
 import { db } from "./db";
 import { auth } from "@clerk/nextjs/server";
 import { UTApi } from "uploadthing/server";
@@ -33,10 +33,7 @@ export async function deleteFile(fileId: number) {
     return { error: "File not found" };
   }
 
-  const utapiResult = await utApi.deleteFiles([extractFileKey(file.url)]);
-
-  console.log("utapi delete files:");
-  console.log(utapiResult);
+  await utApi.deleteFiles([extractFileKey(file.url)]);
 
   const dbDeleteResult = await db
     .delete(files_table)
@@ -266,25 +263,40 @@ export async function createFileShareLink(fileId: number) {
     return { error: "Unauthorized" };
   }
 
-  const [file] = await db
+  // Verify file ownership
+  const files = await db
     .select()
     .from(files_table)
     .where(
       and(eq(files_table.id, fileId), eq(files_table.ownerId, session.userId)),
     );
 
+  const file = files[0];
   if (!file) throw new Error("File not found or not owned by user");
 
-  if (file.shareToken) {
-    return `${process.env.NEXT_PUBLIC_APP_URL}/share/${file.shareToken}`;
+  // Check if share already exists
+  const existingShares = await db
+    .select()
+    .from(file_shares_table)
+    .where(
+      and(
+        eq(file_shares_table.fileId, fileId),
+        eq(file_shares_table.ownerId, session.userId),
+      ),
+    );
+
+  if (existingShares.length > 0) {
+    return `${process.env.NEXT_PUBLIC_APP_URL}/share/${existingShares[0]!.token}`;
   }
 
+  // Create new share
   const token = generateShareToken();
 
-  await db
-    .update(files_table)
-    .set({ shareToken: token })
-    .where(eq(files_table.id, fileId));
+  await db.insert(file_shares_table).values({
+    fileId,
+    ownerId: session.userId,
+    token,
+  });
 
   return `${process.env.NEXT_PUBLIC_APP_URL}/share/${token}`;
 }
@@ -293,8 +305,21 @@ export async function revokeFileShareLink(fileId: number) {
   const { userId } = await auth();
   if (!userId) throw new Error("Not authenticated");
 
-  await db
-    .update(files_table)
-    .set({ shareToken: null })
+  // Verify ownership
+  const files = await db
+    .select()
+    .from(files_table)
     .where(and(eq(files_table.id, fileId), eq(files_table.ownerId, userId)));
+
+  if (!files[0]) throw new Error("File not found or not owned by user");
+
+  // Delete all shares for this file
+  await db
+    .delete(file_shares_table)
+    .where(
+      and(
+        eq(file_shares_table.fileId, fileId),
+        eq(file_shares_table.ownerId, userId),
+      ),
+    );
 }
