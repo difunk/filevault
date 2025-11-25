@@ -128,9 +128,11 @@ npm run db:studio
 - [x] Dateien umbenennen
 - [x] Ordner erstellen
 - [x] Dateien und Ordner per Drag-and-Drop verschieben
+- [x] Datei-Sharing
+- [x] Forschrittsanzeige für Datei-Uploads
 
 ### 🔄 In Entwicklung
 
 - [ ] Ordner verwalten
-- [ ] Datei-Sharing
+- [ ] Dateien und Ordner in und aus Ordner verschieben
 - [ ] Such-Funktionalität

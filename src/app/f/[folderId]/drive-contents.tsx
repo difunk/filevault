@@ -28,6 +28,16 @@ export default function DriveContents(props: {
   rootFolderId: number;
 }) {
   const navigate = useRouter();
+  const [progress, setProgress] = useState(0);
+  const progressTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleUploadProgress = (percent: number) => {
+    setProgress(percent);
+    if (percent === 100) {
+      if (progressTimeout.current) clearTimeout(progressTimeout.current);
+      progressTimeout.current = setTimeout(() => setProgress(0), 1200);
+    }
+  };
 
   type FileWithShare = typeof files_table.$inferSelect & {
     type: "file";
@@ -334,6 +344,17 @@ export default function DriveContents(props: {
           </ul>
         </div>
         <div className="mt-6 flex flex-col items-center justify-center gap-4">
+          {progress > 0 && (
+            <>
+              {console.log("Upload progress:", progress)}
+              <div className="mt-4 h-2 w-full rounded bg-neutral-700">
+                <div
+                  className="h-2 rounded bg-blue-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </>
+          )}
           <div className="flex gap-4">
             <button
               onClick={async () => {
@@ -350,6 +371,7 @@ export default function DriveContents(props: {
             <div className="flex h-[50px] items-center">
               <UploadButton
                 endpoint="driveUploader"
+                onUploadProgress={handleUploadProgress}
                 onClientUploadComplete={() => {
                   navigate.refresh();
                 }}
